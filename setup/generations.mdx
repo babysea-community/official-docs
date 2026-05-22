@@ -1,0 +1,169 @@
+---
+title: 'Generations'
+description: 'Create, track, cancel, delete, and list image and video generations.'
+---
+
+Generations are asynchronous image or video workloads submitted through the regional `/v1` API. This page covers lifecycle fields, retry safety, and content management routes.
+
+## Lifecycle
+
+| Status       | Meaning                                                                        | Terminal |
+| ------------ | ------------------------------------------------------------------------------ | :------: |
+| `pending`    | BabySea accepted the request and created a generation record.                  |    No    |
+| `processing` | An inference provider is running the generation.                               |    No    |
+| `succeeded`  | Output URLs are available in `generation_output_file`.                         |   Yes    |
+| `failed`     | The generation failed. Inspect `generation_error_code` and `generation_error`. |   Yes    |
+| `canceled`   | The generation was canceled before completion.                                 |   Yes    |
+
+Use [webhooks](/setup/webhooks) for production completion handling. Polling is useful for CLIs, tests, and low-throughput workflows.
+
+## Create a generation
+
+Image and video generations use separate routes. Use the model schema reference, the [models](/dashboard/models) page, or `GET /v1/library/models` to inspect supported fields for each `model_identifier`.
+
+| Type  | Route                                        | Required body signal                                                  |
+| ----- | -------------------------------------------- | --------------------------------------------------------------------- |
+| Image | `POST /v1/generate/image/{model_identifier}` | Model-specific image fields.                                          |
+| Video | `POST /v1/generate/video/{model_identifier}` | Model-specific video fields, usually including `generation_duration`. |
+
+```bash Terminal
+curl -X POST https://api.us.babysea.ai/v1/generate/image/bfl/flux-schnell \
+  -H "Authorization: Bearer bye_your_api_key" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 5b3e1c8a-9c1f-4d2e-9b3f-7c0a1e9d2f4c" \
+  -d '{
+    "generation_prompt": "A baby seal playing on Arctic ice",
+    "generation_ratio": "1:1",
+    "generation_output_format": "png",
+    "generation_provider_order": "fastest"
+  }'
+```
+
+A successful create response returns a `generation_id` immediately.
+
+```json JSON
+{
+  "status": "success",
+  "request_id": "req_...",
+  "message": "Generation initialized",
+  "timestamp": "2026-04-28T12:00:00.000Z",
+  "data": {
+    "model_identifier": "bfl/flux-schnell",
+    "generation_provider_order": ["bfl", "replicate"],
+    "generation_prediction_id": "pred_...",
+    "generation_id": "550e8400-e29b-41d4-a716-446655440000",
+    "generation_initialized": true
+  }
+}
+```
+
+## Retry safely
+
+Send an `Idempotency-Key` header on generation create requests when retries can happen from your queue, browser, worker, or SDK client.
+
+| Case                                                    | Result                                                                           |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Same key and same body within the replay window         | BabySea returns the original response and includes `Idempotency-Replayed: true`. |
+| Same key with a different body                          | BabySea returns `BSE2015` with HTTP `409`.                                       |
+| Same key while the original request is still processing | BabySea returns `BSE2016` with HTTP `409`.                                       |
+
+See [Idempotency](/setup/api#idempotency) for the replay window and full contract.
+
+## Provider order
+
+`generation_provider_order` controls the order used for a model that supports more than one inference provider.
+
+| Value          | Behavior                                                                       |
+| -------------- | ------------------------------------------------------------------------------ |
+| Omitted        | Uses the model default.                                                        |
+| `fastest`      | Lets BabySea choose the provider order from current regional performance data. |
+| Explicit order | Uses a model-supported value such as `replicate, fal`.                         |
+
+The create response returns the resolved `generation_provider_order` as an array.
+
+## Fetch a generation
+
+Poll `GET /v1/content/{generation_id}` until `generation_status` is terminal.
+
+```bash Terminal
+curl https://api.us.babysea.ai/v1/content/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer bye_your_api_key"
+```
+
+```json JSON
+{
+  "status": "success",
+  "request_id": "req_...",
+  "message": "Generation info retrieved successfully",
+  "timestamp": "2026-04-28T12:00:12.000Z",
+  "data": {
+    "account_id": "0f0f6cc8-8e33-4f53-90f8-c59362a5b1bd",
+    "generation_id": "550e8400-e29b-41d4-a716-446655440000",
+    "model_identifier": "bfl/flux-schnell",
+    "generation_provider_order": ["bfl", "replicate"],
+    "generation_provider_used": "bfl",
+    "generation_prediction_id": "pred_...",
+    "generation_status": "succeeded",
+    "generation_output_file": ["https://cdn.example.com/output.png"]
+  }
+}
+```
+
+## List generations
+
+`GET /v1/content/list` returns paginated generation records for the authenticated account.
+
+| Query parameter | Default | Limit          |
+| --------------- | ------- | -------------- |
+| `limit`         | `50`    | Maximum `100`. |
+| `offset`        | `0`     | Minimum `0`.   |
+
+```bash Terminal
+curl "https://api.us.babysea.ai/v1/content/list?limit=50&offset=0" \
+  -H "Authorization: Bearer bye_your_api_key"
+```
+
+Paginated responses include `total`, `limit`, and `offset` next to `data`.
+
+## Cancel a generation
+
+Use `POST /v1/content/generation/cancel/{generation_id}` when a generation is still cancelable.
+
+```bash Terminal
+curl -X POST https://api.us.babysea.ai/v1/content/generation/cancel/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer bye_your_api_key"
+```
+
+Cancel requests can return:
+
+| Code      | Meaning                                                    |
+| --------- | ---------------------------------------------------------- |
+| `BSE2011` | The generation does not exist for the account.             |
+| `BSE2012` | The generation already completed, failed, or was canceled. |
+| `BSE2013` | The cancel window has expired.                             |
+
+Eligible cancellations refund reserved credits. See [Errors](/setup/errors#input-validation) for the current cancel window.
+
+## Delete a generation
+
+`DELETE /v1/content/{generation_id}` deletes the generation record and stored output files for that generation.
+
+```bash Terminal
+curl -X DELETE https://api.us.babysea.ai/v1/content/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer bye_your_api_key"
+```
+
+```json JSON
+{
+  "status": "success",
+  "request_id": "req_...",
+  "message": "Generation deleted successfully",
+  "timestamp": "2026-04-28T12:05:00.000Z",
+  "data": {
+    "generation_id": "550e8400-e29b-41d4-a716-446655440000",
+    "files_deleted": 1
+  }
+}
+```
+
+Deletion is irreversible. Output file and generation record retention windows are listed in [billing](/dashboard/billing#retention-by-plan).

@@ -1,0 +1,66 @@
+---
+title: 'Members'
+description: 'Invite teammates, review pending invitations, and understand team roles.'
+---
+
+Members controls access to a team account. Team data is shared across members according to role and permissions.
+
+## Roles
+
+BabySea uses a three-level role model in the dashboard.
+
+| Role            | Description                                                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `primary-owner` | The team creator or transferred owner. Highest privilege. Can manage billing purchases, settings, and ownership transfer. |
+| `owner`         | Can manage operational resources such as API keys, webhooks, domains, and members when permissions allow.                 |
+| `member`        | Can view many operational pages but cannot perform restricted management actions.                                         |
+
+The dashboard treats the account owner as `primary-owner`. Other team members use `owner` or `member`.
+
+## What you can do
+
+| Action             | Description                                               |
+| ------------------ | --------------------------------------------------------- |
+| View members       | See current account members and roles.                    |
+| Invite members     | Send pending invitations to new teammates.                |
+| Review invitations | See pending invitations and their assigned roles.         |
+| Manage roles       | Change roles when your own role and permissions allow it. |
+| Transfer ownership | Available to the current primary owner.                   |
+
+## Access
+
+The Members page is available to owners with member-management permissions. Users without sufficient permissions see a read-only or gated experience.
+
+## Invitations
+
+<Steps>
+  <Step title="Open Members">
+    Select the team account and open **Members**.
+  </Step>
+  <Step title="Invite teammates">
+    Click the invite action and enter recipient details.
+  </Step>
+  <Step title="Assign a role">
+    Choose a role that does not exceed your own privilege level.
+  </Step>
+  <Step title="Track pending invitations">
+    Pending invites appear below the members table until accepted or removed.
+  </Step>
+</Steps>
+
+## Permission boundaries
+
+- Users cannot grant a role above their own privilege level.
+- Ownership transfer is restricted to the primary owner.
+- Operational pages apply their own gates. For example, members can view API keys and webhooks but cannot create or rotate them.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card icon="key" href="/dashboard/api-keys" title="API keys">
+    Review who can create and rotate keys.
+  </Card>
+  <Card icon="credit-card" href="/dashboard/billing" title="Billing">
+    Review billing and purchase permissions.
+  </Card>
+</CardGroup>

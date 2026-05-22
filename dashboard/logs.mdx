@@ -1,0 +1,88 @@
+---
+title: 'Logs'
+description: 'Search, inspect, copy, and export API request history.'
+---
+
+Logs show requests made with BabySea API keys. Use them to debug authentication, scope failures, rate limits, provider errors, and usage patterns.
+
+## What is logged
+
+Each row joins request metadata with key metadata.
+
+| Field        | Description                                             |
+| ------------ | ------------------------------------------------------- |
+| API key name | Name assigned when the key was created.                 |
+| Key prefix   | First 9 characters of the key, used for identification. |
+| Method       | HTTP method.                                            |
+| Endpoint     | API path.                                               |
+| Query params | Sanitized query string values.                          |
+| Status code  | HTTP response status.                                   |
+| Error code   | `BSE` code when the request failed inside BabySea.      |
+| Replay       | Whether the request returned an idempotency replay.     |
+| IP hash      | SHA-256 hash of the client IP. Raw IPs are not shown.   |
+| User agent   | Client user agent.                                      |
+| Timestamp    | Request timestamp.                                      |
+| Key status   | Whether the key is active, expired, or rotated.         |
+
+<Note>Logs do not store request bodies or raw API keys.</Note>
+
+## Search
+
+The search box filters visible rows by:
+
+- key name
+- key prefix
+- endpoint
+- method
+- status code
+- error code
+- query params
+- replay flag
+- IP hash
+
+## Copy and export
+
+Select rows, then use the table action menu to:
+
+- copy selected rows as JSON
+- copy selected rows as CSV
+- download selected rows as JSON
+- download selected rows as CSV
+
+The page displays 500 rows per page. For wide tables, use the fullscreen view from the top-right action button.
+
+## Common debugging flows
+
+### Invalid key
+
+Filter by `BSE1002` or HTTP `401`. Check whether the key is expired, revoked, from the wrong region, or copied incorrectly.
+
+### Missing scope
+
+Filter by `BSE1003` or HTTP `403`. Compare the endpoint with the key scopes in [API keys](/dashboard/api-keys#scope-reference).
+
+### IP allowlist issue
+
+Filter by `BSE1007`. Add the calling server IP to the key allowlist or remove the allowlist for dynamic client environments.
+
+### Rate limit
+
+Filter by `BSE1005` or HTTP `429`. Account-level rate limits are shared by all keys in the account.
+
+### Inference provider failure
+
+Filter by `BSE4`. Inference provider errors include timeouts, unavailable providers, upload failures, and all-provider failure states.
+
+## Retention
+
+API request logs are pruned by plan:
+
+| Plan       | API request log retention |
+| ---------- | ------------------------- |
+| Free       | 1 day                     |
+| Starter    | 7 days                    |
+| Pro        | 30 days                   |
+| Scale      | 180 days                  |
+| Enterprise | 1 year                    |
+
+Records expire according to the retention window for the account plan.

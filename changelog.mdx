@@ -1,0 +1,154 @@
+---
+title: 'Changelog'
+description: 'Product updates, new capabilities, and platform improvements.'
+---
+
+This changelog records customer-facing changes to the BabySea API, SDK, dashboard, models, and inference provider support.
+
+Subscribe to the [status page](https://status.babysea.ai) for incident updates.
+
+---
+
+### Webhook delivery hardening
+
+> May 14, 2026
+
+Customer webhook delivery is now more reliable and more strict across the v1 generation API, provider callback recovery, dashboard test/replay actions, dead-letter queue retries, and low-balance credit alerts.
+
+BabySea now validates webhook destinations before delivery. Endpoints must use public HTTPS on the default HTTPS port, must not include URL credentials, and must not depend on redirects. Delivery rejects localhost, private, link-local, reserved, multicast, and translated IPv6 destinations, including hosts that resolve to blocked addresses.
+
+Outbound webhook delivery now uses a single signed delivery path with DNS pinning, redirect-free HTTPS requests, bounded response handling, and explicit wall-clock timeouts. Retry timing is now kept short and predictable so provider callbacks can finish promptly: immediate attempt, then 0.5s, 1.5s, 3s, and 5s retries.
+
+Generation terminal events are now deduplicated more aggressively when provider retries overlap, reducing duplicate `generation.completed`, `generation.failed`, and `generation.canceled` customer webhooks. Disabled endpoints now receive dead-letter queue entries consistently when subscribed events occur, including `credits.low_balance` alerts.
+
+Fal and Replicate callback validation is also more resilient. Incoming provider webhook bodies are size-limited while streaming, Replicate signatures now only accept `v1` signature components, and cached signing metadata is reused during temporary provider metadata refresh failures.
+
+No customer webhook payload or signature format changed. Existing consumers should continue verifying `X-BabySea-Signature` with the same `t=<timestamp>,v1=<hmac>` format.
+
+---
+
+### API usage logging reliability
+
+> May 13, 2026
+
+API key usage logging across all v1 routes is now awaited with explicit error handling. Logging failures are captured and surfaced in server logs without affecting the response returned to the caller.
+
+---
+
+### Playground
+
+> May 12, 2026
+
+The browser playground now supports the full generation workflow end-to-end. Select any image or video model from the catalog, build a request using the schema-aware input panel, and send it directly against the US, EU, or JP API with your API key.
+
+The playground includes a model schema viewer, per-field validation, cURL export for every request, and a response panel with syntax-highlighted JSON. While a generation is in-flight, a live loading timeline shows the active provider, elapsed time, and failover steps as they happen, backed by Supabase Realtime for instant DB-driven status updates rather than client-side simulation.
+
+Content management operations: retrieve, cancel, and delete, are available in a separate panel below the generation section.
+
+---
+
+### Predictive provider routing and regional event pipeline
+
+> May 11, 2026
+
+`generation_provider_order: "fastest"` now routes to providers using real-time rankings computed from generation latency and success data across all regions. Rankings are updated continuously and served from a low-latency cache, so `fastest` selects the best-performing provider for a given model at request time rather than using a static order.
+
+The platform now runs a regional event pipeline across US, EU, and JP. Generation events flow through a transactional outbox into a multi-region Kafka cluster and are ingested into a streaming analytics layer. This powers the predictive routing above and improves the accuracy of provider health signals used for failover.
+
+These changes are fully transparent, no API or SDK changes are required. `fastest` behavior improves automatically.
+
+---
+
+### Idempotency, concurrency, alerts, and provider order
+
+> April 29, 2026
+
+Generation requests now support the `Idempotency-Key` header. Reusing the same key with the same request body returns the original response for 24 hours and includes `Idempotency-Replayed: true`. The TypeScript SDK exposes this through `client.generate()` with `options.idempotencyKey` and sets `idempotency_replayed` on replayed responses.
+
+Accounts now have per-plan concurrency caps for in-flight image and video generations. Requests above the cap return `BSE1009` with type `concurrency_limit_exceeded`. The low-balance alert default is now one `$0.50` threshold, and existing custom thresholds remain unchanged.
+
+Multi-provider models now accept `fastest` for `generation_provider_order`, and `fastest` is the default when the field is omitted. Explicit provider orders such as `replicate, fal` still override the default.
+
+See [idempotency](/setup/api#idempotency), [concurrency limits](/setup/api#concurrency-limits), and [low-balance alerts](/dashboard/credits#low-balance-alerts).
+
+---
+
+### Error handling and dashboard improvements
+
+> April 28, 2026
+
+Error classification is more consistent across inference providers. Rate limits, capacity errors, service pause states, and provider-specific failures now map to clearer `BSE` codes so failover and retry behavior are easier to reason about.
+
+Credit usage totals now remain accurate across account history. The dashboard also improves provider display names, usage chart layout, and plan budget totals.
+
+---
+
+### Reliability and API consistency
+
+> April 27, 2026
+
+Generation attempts now use consistent timeout behavior across inference providers. A slow or unavailable provider no longer blocks the full provider order from continuing.
+
+Cancellation and cleanup behavior is more reliable for concurrent requests. Content retrieval now enforces account ownership consistently, and protected health endpoints require API key authentication.
+
+Model integrations were updated for provider specification changes, including image editing support, `input_fidelity`, and schema consistency.
+
+---
+
+### Execution analytics and observability
+
+> April 22, 2026
+
+The dashboard now shows generation outcomes, request volume, credit movement, webhook delivery, latency, model usage, and provider usage for each account.
+
+Use [metrics](/dashboard/metrics), [logs](/dashboard/logs), [credits](/dashboard/credits), and [activity](/dashboard/activity) to review usage and operational history.
+
+---
+
+### Alibaba Cloud
+
+> April 17, 2026
+
+Alibaba Cloud is now available as an inference provider. You can select it with `generation_provider_order` when the chosen model supports it.
+
+---
+
+### OpenAI and Runway, plus 6 new models
+
+> April 8, 2026
+
+OpenAI and Runway are now available as inference providers. The update also added 6 model identifiers to the catalog.
+
+Models added:
+
+- openai/gpt-image-1.5
+- runway/gen4-aleph
+- runway/gen4-image
+- runway/gen4-image-turbo
+- runway/gen4-turbo
+- runway/gen4.5
+
+---
+
+### Black Forest Labs and the FLUX 2 models
+
+> April 2, 2026
+
+Black Forest Labs is now available as an inference provider, with support for the FLUX 2 model family.
+
+Models added:
+
+- bfl/flux-2-flex
+- bfl/flux-2-klein-9b
+- bfl/flux-2-max
+- bfl/flux-2-pro
+
+---
+
+### Public launch
+
+> March 27, 2026
+
+BabySea launched with one regional API for image and video generation, signed webhooks, credit billing, API request logs, a browser playground, and the TypeScript SDK.
+
+The launch catalog included 74 image and video models across BytePlus, Cloudflare, Fal, and Replicate. Browse the current catalog in [models](/dashboard/models).

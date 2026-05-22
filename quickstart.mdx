@@ -1,0 +1,178 @@
+---
+title: 'Quickstart'
+description: 'Create an API key and run your first workload.'
+---
+
+This guide sends an image generation request, retrieves the result, and shows the same flow with the TypeScript SDK.
+
+## 1. Create an API key
+
+Sign in to the [dashboard](https://us.babysea.ai/auth/sign-in), open **API keys**, and click **Create API key**.
+
+Choose one of these presets:
+
+| Preset        | Use it for                                                                      |
+| ------------- | ------------------------------------------------------------------------------- |
+| Full Access   | Development, testing, and admin automation.                                     |
+| Generate Only | Production generation workers. Includes create, read, and model catalog access. |
+| Read Only     | Reporting tools that must not spend credits.                                    |
+| Monitor Only  | Health checks and model catalog sync.                                           |
+
+<Warning>
+  BabySea shows the full key only once. Store it in a secrets manager before
+  closing the dialog.
+</Warning>
+
+## 2. Pick the correct region
+
+Use the API hostname that matches where the key was created.
+
+| Region value | Base URL                       |
+| ------------ | ------------------------------ |
+| `us`         | `https://api.us.babysea.ai/v1` |
+| `eu`         | `https://api.eu.babysea.ai/v1` |
+| `jp`         | `https://api.jp.babysea.ai/v1` |
+
+In examples below, replace `api.us.babysea.ai` with your region if needed.
+
+## 3. Smoke-test the key
+
+`GET /v1/status` verifies the key and returns its account metadata. It requires the `account:read` scope.
+
+```bash Terminal
+curl https://api.us.babysea.ai/v1/status \
+  -H "Authorization: Bearer bye_your_api_key"
+```
+
+A valid key returns a success envelope:
+
+```json JSON
+{
+  "status": "success",
+  "request_id": "req_...",
+  "message": "API connected successfully",
+  "timestamp": "2026-04-28T12:00:00.000Z",
+  "data": {
+    "account_id": "0f0f6cc8-8e33-4f53-90f8-c59362a5b1bd",
+    "apikey_id": "1b8a6d48-c8c5-4f6f-bb61-4e9cb85f0d93",
+    "apikey_name": "Production key",
+    "apikey_prefix": "bye_...",
+    "apikey_created_at": "2026-04-28T11:45:00.000Z",
+    "apikey_last_used_at": "2026-04-28T12:00:00.000Z",
+    "apikey_expires_at": null
+  }
+}
+```
+
+<Note>
+  If you created a `Generate Only` key, skip this status check and call a
+  generation or library endpoint instead. That preset does not include
+  `account:read`.
+</Note>
+
+## 4. Submit a generation
+
+Use an `Idempotency-Key` when the same user action or queue job might retry.
+
+<Tabs>
+  <Tab title="Image">
+    ```bash Terminal
+    curl -X POST https://api.us.babysea.ai/v1/generate/image/bfl/flux-schnell \
+      -H "Authorization: Bearer bye_your_api_key" \
+      -H "Content-Type: application/json" \
+      -H "Idempotency-Key: 5b3e1c8a-9c1f-4d2e-9b3f-7c0a1e9d2f4c" \
+      -d '{
+        "generation_prompt": "A baby seal playing on Arctic ice",
+        "generation_ratio": "1:1",
+        "generation_output_format": "png"
+      }'
+    ```
+  </Tab>
+  <Tab title="Video">
+    ```bash Terminal
+    curl -X POST https://api.us.babysea.ai/v1/generate/video/google/veo-2 \
+      -H "Authorization: Bearer bye_your_api_key" \
+      -H "Content-Type: application/json" \
+      -H "Idempotency-Key: 49a13f4d-88b5-4e02-9173-108b2d2a6c61" \
+      -d '{
+        "generation_prompt": "A penguin swimming under Antarctic ice",
+        "generation_duration": 5
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+BabySea validates the request, checks the key scope, reserves credits, creates a generation record, and returns a `generation_id`.
+
+```json JSON
+{
+  "status": "success",
+  "request_id": "req_...",
+  "message": "Generation initialized",
+  "timestamp": "2026-04-28T12:00:00.000Z",
+  "data": {
+    "model_identifier": "bfl/flux-schnell",
+    "generation_provider_order": ["bfl", "replicate"],
+    "generation_prediction_id": "pred_...",
+    "generation_id": "550e8400-e29b-41d4-a716-446655440000",
+    "generation_initialized": true
+  }
+}
+```
+
+## 5. Fetch the result
+
+Poll `GET /v1/content/{generation_id}` until `generation_status` is `succeeded`, `failed`, or `canceled`.
+
+```bash Terminal
+curl https://api.us.babysea.ai/v1/content/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer bye_your_api_key"
+```
+
+Typical statuses:
+
+| Status       | Meaning                                                               |
+| ------------ | --------------------------------------------------------------------- |
+| `pending`    | BabySea created the record and is preparing provider execution.       |
+| `processing` | An inference provider is running the generation.                      |
+| `succeeded`  | Output URLs are available in `generation_output_file`.                |
+| `failed`     | The job failed. Check `generation_error_code` and `generation_error`. |
+| `canceled`   | The job was canceled before completion.                               |
+
+## 6. Use the SDK
+
+```ts TypeScript
+import { BabySea } from 'babysea';
+
+const client = new BabySea({
+  apiKey: process.env.BABYSEA_API_KEY!,
+  region: 'us',
+});
+
+const created = await client.generate('bfl/flux-schnell', {
+  generation_prompt: 'A baby seal playing on Arctic ice',
+  generation_ratio: '1:1',
+  generation_output_format: 'png',
+});
+
+let generation = await client.getGeneration(created.data.generation_id);
+while (['pending', 'processing'].includes(generation.data.generation_status)) {
+  await new Promise((resolve) => setTimeout(resolve, 2_000));
+  generation = await client.getGeneration(created.data.generation_id);
+}
+
+console.log(
+  generation.data.generation_status,
+  generation.data.generation_output_file,
+);
+```
+
+## Production checklist
+
+- Use a `Generate Only` key for generation workers.
+- Add an IP allowlist when requests come from fixed infrastructure.
+- Use [idempotency](/setup/api#idempotency) for queue retries and user-triggered retries.
+- Register a [webhook endpoint](/setup/webhooks) instead of polling in hot paths.
+- Review the [generation lifecycle](/setup/generations) before adding cancel or delete controls.
+- Use [errors](/setup/errors) to distinguish retryable provider errors from request issues.
+- Monitor [logs](/dashboard/logs), [credits](/dashboard/credits), and [activity](/dashboard/activity) after launch.

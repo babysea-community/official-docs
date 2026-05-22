@@ -1,0 +1,88 @@
+---
+title: 'Activity'
+description: 'Review the account audit feed and export selected events.'
+---
+
+Activity is the account audit feed. It records important dashboard, API, billing, webhook, credit, and compliance events in one searchable table.
+
+## Access
+
+Activity is visible to all team roles. The page has no write actions.
+
+## Event fields
+
+| Field       | Description                                               |
+| ----------- | --------------------------------------------------------- |
+| Event ID    | Unique activity event ID.                                 |
+| Actor       | User ID or `system`.                                      |
+| Category    | Product area, such as `api_key`, `webhook`, or `billing`. |
+| Action      | Machine-readable action name.                             |
+| Description | Human-readable event summary.                             |
+| Timestamp   | Event creation time.                                      |
+
+## Categories
+
+BabySea can record events in these categories:
+
+| Category       | Examples                                                    |
+| -------------- | ----------------------------------------------------------- |
+| `api_key`      | key created, rotated, revoked, deleted                      |
+| `webhook`      | endpoint created, toggled, secret rotated, delivery actions |
+| `credit`       | credits reserved, charged, refunded, or added               |
+| `generation`   | generation lifecycle events                                 |
+| `subscription` | subscription changes                                        |
+| `membership`   | member joined, role changed, or removed                     |
+| `account`      | account or team setting changes                             |
+| `invitation`   | team invitations                                            |
+| `order`        | one-time purchases                                          |
+| `billing`      | billing events                                              |
+| `notification` | notification lifecycle                                      |
+| `auth`         | authentication events                                       |
+| `domain`       | custom domain changes                                       |
+| `consent`      | consent records                                             |
+| `bug_report`   | bug report submissions                                      |
+
+## Search
+
+The search box filters by:
+
+- description
+- action
+- category
+- actor
+
+The current dashboard loads the full feed and applies search client-side.
+
+## Copy and export
+
+Select rows, then export or copy them from the table action menu:
+
+- copy selected rows as JSON
+- copy selected rows as CSV
+- download selected rows as JSON
+- download selected rows as CSV
+
+The page displays 200 rows per page and includes a fullscreen view.
+
+## Retention
+
+Activity logs are pruned by plan:
+
+| Plan       | Activity retention |
+| ---------- | ------------------ |
+| Free       | 1 day              |
+| Starter    | 7 days             |
+| Pro        | 30 days            |
+| Scale      | 180 days           |
+| Enterprise | 1 year             |
+
+Records expire according to the retention window for the account plan.
+
+## When to use activity and logs
+
+| Page     | Use it for                                          |
+| -------- | --------------------------------------------------- |
+| Activity | Who changed what in the account.                    |
+| Logs     | Per-request API key traffic and API response codes. |
+| Credits  | Credit balance and ledger movements.                |
+| Webhook  | Webhook endpoint delivery attempts and payloads.    |

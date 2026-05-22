@@ -1,0 +1,115 @@
+---
+title: 'API keys'
+description: 'Create, scope, rotate, revoke, delete, and audit BabySea API keys.'
+---
+
+API keys authenticate requests to the BabySea `/v1` API. A key belongs to one account, one region, and one set of scopes.
+
+## Access
+
+| Role            | Can view | Can create | Can rotate | Can revoke/delete |
+| --------------- | :------: | :--------: | :--------: | :---------------: |
+| `primary-owner` |   Yes    |    Yes     |    Yes     |        Yes        |
+| `owner`         |   Yes    |    Yes     |    Yes     |        Yes        |
+| `member`        |   Yes    |     No     |     No     |        No         |
+
+Members can inspect key metadata but management actions are disabled.
+
+## Create a key
+
+<Steps>
+  <Step title="Open API keys">
+    From the dashboard, open **API keys** for the selected account.
+  </Step>
+  <Step title="Name the key">
+    Use a clear name such as `production-worker-us` or `ci-smoke-tests`. Names
+    can be up to 100 characters.
+  </Step>
+  <Step title="Choose scopes">Pick a preset or use custom scope triples.</Step>
+  <Step title="Optional: add expiry and IPs">
+    Set an expiration date or an IP allowlist. If no IPs are set, all client IPs
+    are allowed.
+  </Step>
+  <Step title="Store the key">
+    Copy the full `bye_...` key before closing the dialog. It cannot be
+    retrieved later.
+  </Step>
+</Steps>
+
+## Permission presets
+
+| Preset        | Scopes                                                                                                    | Use case                          |
+| ------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Full Access   | `generation:write`, `generation:read`, `generation:delete`, `account:read`, `health:read`, `library:read` | Admin scripts and development.    |
+| Generate Only | `generation:write`, `generation:read`, `library:read`                                                     | Production generation workers.    |
+| Read Only     | `generation:read`, `account:read`, `health:read`, `library:read`                                          | Reporting and dashboards.         |
+| Monitor Only  | `health:read`, `library:read`                                                                             | Uptime monitors and catalog sync. |
+
+## Scope reference
+
+| Scope               | Routes                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `generation:write`  | `POST /v1/generate/image/{model_identifier}`, `POST /v1/generate/video/{model_identifier}`                                |
+| `generation:read`   | `GET /v1/content/{generation_id}`, `GET /v1/content/list`                                                                 |
+| `generation:delete` | `DELETE /v1/content/{generation_id}`, `POST /v1/content/generation/cancel/{generation_id}`                                |
+| `account:read`      | `GET /v1/status`, `GET /v1/usage`, `GET /v1/user/account`, `GET /v1/user/billing`                                         |
+| `health:read`       | `GET /v1/health/inference/providers`, `GET /v1/health/inference/models`, `GET /v1/health/storage`, `GET /v1/health/cache` |
+| `library:read`      | `GET /v1/library/providers`, `GET /v1/library/models`, `GET /v1/estimate/{model_identifier}`                              |
+
+## IP allowlists
+
+Use IP allowlists for fixed server workloads or CI runners.
+
+- Up to 50 entries per key.
+- Each entry can be up to 45 characters.
+- `null` allowlist means all IPs are allowed.
+- Disallowed clients receive `BSE1007` with type `ip_not_allowed`.
+
+## Rotate a key
+
+Rotation creates a new key with the same scopes and IP allowlist. The old key stays valid during the grace period.
+
+| Setting              | Value     |
+| -------------------- | --------- |
+| Default grace period | 24 hours  |
+| Minimum              | 1 hour    |
+| Maximum              | 168 hours |
+
+<Steps>
+  <Step title="Rotate in the dashboard">
+    Open the key action menu and choose **Rotate**.
+  </Step>
+  <Step title="Deploy the new key">
+    Store the new value in your secret manager and deploy it to all consumers.
+  </Step>
+  <Step title="Wait for the grace period">
+    Confirm logs show traffic from the new key prefix.
+  </Step>
+  <Step title="Revoke the old key if needed">
+    Revoke early if you are responding to exposure or no longer need the
+    overlap.
+  </Step>
+</Steps>
+
+## Revoke vs delete
+
+| Action | Effect                                                 | Use it when                                       |
+| ------ | ------------------------------------------------------ | ------------------------------------------------- |
+| Revoke | Sets the key inactive. Metadata remains for audit.     | You want to stop access but keep history visible. |
+| Delete | Permanently deletes the key row and cascades key logs. | You no longer need the key or its logs.           |
+
+## What is logged
+
+Every API request records key usage metadata:
+
+- key prefix
+- endpoint and method
+- status code
+- error code
+- idempotency replay flag
+- sanitized query parameters
+- SHA-256 IP hash
+- user agent
+- timestamp
+
+View these records in [logs](/dashboard/logs).

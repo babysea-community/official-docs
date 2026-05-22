@@ -1,0 +1,46 @@
+---
+title: 'Settings'
+description: 'Manage team identity, slug, avatar, and danger-zone actions.'
+---
+
+Settings controls team account identity. It is separate from personal profile settings.
+
+## Access
+
+| Role            | Can view | Can edit |
+| --------------- | :------: | :------: |
+| `primary-owner` |   Yes    |   Yes    |
+| `owner`         |   Yes    |    No    |
+| `member`        |   Yes    |    No    |
+
+The page is visible to team members, but editing is restricted to the `primary-owner`.
+
+## Editable fields
+
+| Field     | Description                                |
+| --------- | ------------------------------------------ |
+| Team name | Display name for the team account.         |
+| Avatar    | Team picture shown in the dashboard.       |
+| Slug      | URL segment used in team dashboard routes. |
+
+Changing a team slug changes dashboard URLs for that team. Share the new URL with team members if they have bookmarked account pages.
+
+## Danger zone
+
+Team deletion appears only when it is enabled for the account. When available, only the `primary-owner` can delete the team.
+
+<Warning>
+  Team deletion is destructive. Review billing, API keys, webhooks, custom
+  domains, logs, and stored generations before deleting a team.
+</Warning>
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card icon="users" href="/dashboard/members" title="Members">
+    Invite members and manage roles.
+  </Card>
+  <Card icon="user" href="/dashboard/my-profile" title="My profile">
+    Manage your personal identity and auth settings.
+  </Card>
+</CardGroup>

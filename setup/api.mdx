@@ -1,0 +1,183 @@
+---
+title: 'API'
+description: 'Use regional base URLs, authentication, endpoints, response envelopes, rate limits, and idempotency.'
+---
+
+BabySea exposes a regional `/v1` API for image and video generation. App-level responses use one envelope and one error format across inference providers.
+
+<CardGroup cols={3}>
+  <Card
+    title="Generations"
+    icon="wand-magic-sparkles"
+    href="/setup/generations"
+  >
+    Create, track, cancel, delete, and list generation records.
+  </Card>
+  <Card title="Webhooks" icon="link" href="/setup/webhooks">
+    Receive signed generation and credit events.
+  </Card>
+  <Card
+    title="Model schema reference"
+    icon="file-code"
+    href="https://babysea.ai/model-schema"
+  >
+    Browse model identifiers, supported fields, pricing, and request examples.
+  </Card>
+</CardGroup>
+
+## Base URLs
+
+| Region value | Base URL                       |
+| ------------ | ------------------------------ |
+| `us`         | `https://api.us.babysea.ai/v1` |
+| `eu`         | `https://api.eu.babysea.ai/v1` |
+| `jp`         | `https://api.jp.babysea.ai/v1` |
+
+<Note>
+  API keys are region-specific. A key created in one region cannot authenticate
+  against a different regional hostname.
+</Note>
+
+## Authentication
+
+Pass the key in the `Authorization` header:
+
+```bash Terminal
+Authorization: Bearer bye_your_api_key
+```
+
+Keys start with `bye_`. The full key is shown once when you create or rotate it.
+
+## Endpoints
+
+| Method | Path                                            | Scope               | Description                                                                                                            |
+| ------ | ----------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/v1/status`                                    | `account:read`      | API key and account identity.                                                                                          |
+| GET    | `/v1/usage`                                     | `account:read`      | Request and generation usage. Accepts `days` from 1 to 90.                                                             |
+| GET    | `/v1/user/account`                              | `account:read`      | Account profile.                                                                                                       |
+| GET    | `/v1/user/billing`                              | `account:read`      | Plan, credit balance, and subscription period.                                                                         |
+| GET    | `/v1/estimate/{model_identifier}`               | `library:read`      | Estimate cost. Accepts `count`, `duration`, `resolution`, and `audio`. `count` defaults to `1` and is capped at `100`. |
+| POST   | `/v1/generate/image/{model_identifier}`         | `generation:write`  | Start an image generation.                                                                                             |
+| POST   | `/v1/generate/video/{model_identifier}`         | `generation:write`  | Start a video generation.                                                                                              |
+| GET    | `/v1/content/{generation_id}`                   | `generation:read`   | Retrieve one generation record.                                                                                        |
+| GET    | `/v1/content/list`                              | `generation:read`   | List generation records. See [generations](/setup/generations#list-generations) for pagination defaults.               |
+| DELETE | `/v1/content/{generation_id}`                   | `generation:delete` | Delete a generation and stored output files.                                                                           |
+| POST   | `/v1/content/generation/cancel/{generation_id}` | `generation:delete` | Cancel an in-flight generation when it is still cancelable.                                                            |
+| GET    | `/v1/health/inference/providers`                | `health:read`       | Inference provider availability.                                                                                       |
+| GET    | `/v1/health/inference/models`                   | `health:read`       | Model availability by inference provider.                                                                              |
+| GET    | `/v1/health/storage`                            | `health:read`       | Storage health.                                                                                                        |
+| GET    | `/v1/health/cache`                              | `health:read`       | Cache health.                                                                                                          |
+| GET    | `/v1/library/providers`                         | `library:read`      | Inference provider catalog.                                                                                            |
+| GET    | `/v1/library/models`                            | `library:read`      | Model catalog, schemas, inference providers, and pricing.                                                              |
+
+## Generation request fields
+
+Every model has a strict schema. Use `/v1/library/models`, the [playground](/dashboard/playground), or the model schema reference to inspect allowed values for a model.
+
+| Field                                | Type     | Notes                                                                                          |
+| ------------------------------------ | -------- | ---------------------------------------------------------------------------------------------- |
+| `generation_prompt`                  | string   | Prompt text. Required for most models.                                                         |
+| `generation_ratio`                   | string   | Aspect ratio, such as `1:1` or `16:9`. Allowed values are model-specific.                      |
+| `generation_output_format`           | string   | Output format, such as `png`, `jpg`, `webp`, or `mp4`.                                         |
+| `generation_output_number`           | number   | Number of requested outputs. Maximum is model-specific.                                        |
+| `generation_input_file`              | string[] | Public file URLs for image-to-image or image-to-video models.                                  |
+| `generation_input_file_last_content` | string   | Optional last-frame URL for video models that support it.                                      |
+| `generation_duration`                | number   | Required for video models. Allowed durations are model-specific.                               |
+| `generation_resolution`              | string   | Used by models with resolution-specific pricing.                                               |
+| `generation_generate_audio`          | boolean  | Used by video models with audio pricing.                                                       |
+| `generation_provider_order`          | string   | Optional provider priority. Use `fastest` or a model-supported order such as `replicate, fal`. |
+
+Unknown or unsupported fields are rejected for strict model schemas.
+
+## Success envelope
+
+Successful app-level API responses use this envelope:
+
+```json JSON
+{
+  "status": "success",
+  "request_id": "req_...",
+  "message": "Operation successful",
+  "timestamp": "2026-04-28T12:00:00.000Z",
+  "data": {}
+}
+```
+
+Paginated responses add `total`, `limit`, and `offset` next to `data`.
+
+## Error envelope
+
+Structured `BSE` errors use this envelope:
+
+```json JSON
+{
+  "status": "error",
+  "request_id": "req_...",
+  "error": {
+    "code": "BSE1002",
+    "type": "authentication_failed",
+    "message": "Invalid or expired API key.",
+    "retryable": false,
+    "details": {}
+  }
+}
+```
+
+See [errors](/setup/errors) for the full code list.
+
+## Rate limits
+
+Limits are per account, not per key. All keys under the same account share the same bucket.
+
+| Plan       | General requests/min | Generation requests/min |
+| ---------- | -------------------- | ----------------------- |
+| Free       | 30                   | 10                      |
+| Starter    | 60                   | 20                      |
+| Pro        | 150                  | 50                      |
+| Scale      | 300                  | 100                     |
+| Enterprise | 600                  | 200                     |
+
+Rate-limited responses include `Retry-After`. All rate-limited routes include:
+
+- `X-RateLimit-Limit`
+- `X-RateLimit-Remaining`
+- `X-RateLimit-Reset`
+
+## Concurrency limits
+
+In addition to per-minute rate limits, BabySea caps the number of generations that can be in flight at the same time per account. Image and video are tracked separately.
+
+| Plan       | Image in flight | Video in flight |
+| ---------- | --------------- | --------------- |
+| Free       | 2               | 1               |
+| Starter    | 5               | 2               |
+| Pro        | 15              | 5               |
+| Scale      | 30              | 10              |
+| Enterprise | 60              | 20              |
+
+When the cap is reached, additional generation create requests return `BSE1009` (`concurrency_limit_exceeded`, HTTP `429`, retryable). Reduce parallelism or retry after active create requests finish.
+
+## Idempotency
+
+`POST /v1/generate/image/*` and `POST /v1/generate/video/*` accept an optional `Idempotency-Key` request header. Use it to safely retry a generation request (for example after a network error) without creating duplicate work or duplicate charges.
+
+```bash Terminal
+curl https://api.us.babysea.ai/v1/generate/image/bfl/flux-schnell \
+  -H "Authorization: Bearer bye_your_api_key" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 5b3e1c8a-9c1f-4d2e-9b3f-7c0a1e9d2f4c" \
+  -d '{"generation_prompt":"A baby seal playing on Arctic ice"}'
+```
+
+Behavior:
+
+- Keys must match `[A-Za-z0-9_\-:.]{1,255}`. UUIDs work well.
+- Cached responses are returned for 24 hours after the original request completes.
+- A replayed response includes the `Idempotency-Replayed: true` response header. The original `request_id`, status code, and body are returned exactly as before.
+- Reusing a key with a different request body returns `BSE2015` (`idempotency_key_conflict`, HTTP `409`).
+- Reusing a key while the original request is still processing returns `BSE2016` (`idempotency_request_in_progress`, HTTP `409`, retryable).
+- Idempotency is scoped per account.
+
+## Malformed requests
+
+Requests with an invalid method, path, parameter shape, or body shape can be rejected before BabySea returns a structured `BSE` error. Validate the request shape before retrying.

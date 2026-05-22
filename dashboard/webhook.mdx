@@ -1,0 +1,88 @@
+---
+title: 'Webhook'
+description: 'Create endpoints, choose events, rotate secrets, test delivery, and inspect webhook logs.'
+---
+
+Webhooks let your server receive signed BabySea events without polling. Use this dashboard page to manage endpoints and delivery history.
+
+<Card title="Webhook integration guide" icon="link" href="/setup/webhooks">
+  Verify signatures, inspect payloads, and review delivery behavior.
+</Card>
+
+## Access
+
+| Role            | Can view | Can create/update | Can rotate secret | Can replay or deliver queued events | Can delete |
+| --------------- | :------: | :---------------: | :---------------: | :---------------------------------: | :--------: |
+| `primary-owner` |   Yes    |        Yes        |        Yes        |                 Yes                 |    Yes     |
+| `owner`         |   Yes    |        Yes        |        Yes        |                 Yes                 |    Yes     |
+| `member`        |   Yes    |        No         |        No         |                 No                  |     No     |
+
+Members can inspect endpoint metadata and delivery logs, but management actions are disabled.
+
+## What you manage
+
+| Area           | Description                                                                         |
+| -------------- | ----------------------------------------------------------------------------------- |
+| Endpoint URL   | Public HTTPS URL on the default HTTPS port that receives `POST` requests.           |
+| Events         | Subscribed event types, including `generation.completed` and `credits.low_balance`. |
+| Signing secret | `whsec_...` secret used to verify `X-BabySea-Signature`.                            |
+| Delivery log   | Event type, generation ID, payload, status code, error, attempts, and timestamp.    |
+| Queue          | Pending generation events that arrived while the endpoint was disabled.             |
+
+## Create an endpoint
+
+<Steps>
+  <Step title="Open Webhook">
+    From the dashboard, open **Webhook**.
+  </Step>
+  <Step title="Add endpoint">
+    Enter a publicly reachable HTTPS URL on the default HTTPS port that accepts `POST` requests without redirecting.
+
+    ```text
+    https://api.example.com/webhooks/babysea
+    ```
+
+  </Step>
+  <Step title="Choose events">
+    Subscribe to the event types your server handles.
+  </Step>
+  <Step title="Store the secret">
+    Copy the `whsec_...` signing secret before closing the dialog. It cannot be retrieved later.
+  </Step>
+  <Step title="Send a test event">
+    Open the endpoint details page and click **Send test event**. Your handler should return any `2xx` status.
+  </Step>
+</Steps>
+
+## Endpoint details
+
+Owners can use the endpoint details page to:
+
+- enable or disable the endpoint
+- rotate the webhook secret
+- send a test event
+- replay an individual delivery
+- deliver queued events
+- delete the endpoint
+
+Use [webhooks](/setup/webhooks#verify-signatures) for the raw-body verification flow before processing event data.
+
+## Delivery log
+
+The delivery table shows:
+
+| Column        | Description                                                   |
+| ------------- | ------------------------------------------------------------- |
+| Event         | Event type, such as `generation.completed`.                   |
+| Generation ID | Related generation ID, when the event is generation-specific. |
+| Payload       | JSON body sent to your endpoint.                              |
+| Status code   | HTTP status returned by your endpoint.                        |
+| Error         | Delivery error or non-`2xx` status summary.                   |
+| Attempts      | Number of attempts recorded for the delivery.                 |
+| Timestamp     | Delivery log timestamp.                                       |
+
+## Queued events
+
+If all retry attempts fail repeatedly, BabySea can disable the endpoint. Matching generation events that arrive while an endpoint is disabled are queued for later delivery.
+
+Use **Deliver queued events** after fixing the endpoint and re-enabling it. See [webhook delivery behavior](/setup/webhooks#delivery-behavior) for retry, timeout, auto-disable, and queue details.

@@ -1,0 +1,74 @@
+---
+title: 'Domains'
+description: 'Configure an Enterprise custom API domain for your BabySea account.'
+---
+
+Domains let Enterprise accounts use a custom API hostname instead of the default regional BabySea endpoint.
+
+## Availability
+
+| Plan       | Custom API domain |
+| ---------- | :---------------: |
+| Free       |        No         |
+| Starter    |        No         |
+| Pro        |        No         |
+| Scale      |        No         |
+| Enterprise |        Yes        |
+
+Only the `custom` domain type is supported. Each account can have one custom domain, and a domain name can belong to only one BabySea account globally.
+
+## Access
+
+| Role            | Can view | Can add | Can verify | Can remove |
+| --------------- | :------: | :-----: | :--------: | :--------: |
+| `primary-owner` |   Yes    |   Yes   |    Yes     |    Yes     |
+| `owner`         |   Yes    |   Yes   |    Yes     |    Yes     |
+| `member`        |   Yes    |   No    |     No     |     No     |
+
+## Add a custom domain
+
+<Steps>
+  <Step title="Open Domains">
+    From the dashboard, open **Domains** for an Enterprise account.
+  </Step>
+  <Step title="Enter a hostname">
+    Use a fully qualified lowercase hostname, such as `api.example.com`.
+  </Step>
+  <Step title="Create the DNS record">
+    Add the CNAME target shown in the dashboard at your DNS provider.
+  </Step>
+  <Step title="Verify">
+    Click **Verify** after DNS propagates. BabySea checks the domain and marks
+    it active when the CNAME is valid.
+  </Step>
+</Steps>
+
+## Statuses
+
+| Status     | Meaning                                            |
+| ---------- | -------------------------------------------------- |
+| `pending`  | Domain is stored and waiting for DNS verification. |
+| `active`   | Domain is verified and can route API traffic.      |
+| `failed`   | Provisioning or verification failed.               |
+| `removing` | Domain removal is in progress.                     |
+
+## DNS requirements
+
+- Use CNAME DNS, not A or AAAA records.
+- Keep the hostname lowercase.
+- Do not use a hostname already connected to another BabySea account.
+- DNS propagation can take time depending on your provider.
+
+## Subscription changes
+
+Custom domains require an active Enterprise subscription. If the account is no longer eligible, the custom domain can be removed or disabled.
+
+## Default endpoint
+
+All accounts can use the default regional endpoints:
+
+| Region value | Default API endpoint           |
+| ------------ | ------------------------------ |
+| `us`         | `https://api.us.babysea.ai/v1` |
+| `eu`         | `https://api.eu.babysea.ai/v1` |
+| `jp`         | `https://api.jp.babysea.ai/v1` |

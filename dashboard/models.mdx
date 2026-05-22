@@ -1,0 +1,39 @@
+---
+title: 'Models'
+description: 'Browse supported image and video models, prices, schema fields, providers, and usage counts.'
+---
+
+Models lists the generation models available to the selected account. Use it to find a `model_identifier`, compare cost parameters, and check which inference providers can run a model.
+
+## Access
+
+Models is visible to every team role. The page has no write actions.
+
+## Table fields
+
+| Column           | Description                                                         |
+| ---------------- | ------------------------------------------------------------------- |
+| Model identifier | API value passed to `client.generate()` or `/v1/generate/...`.      |
+| Type             | `image` or `video`.                                                 |
+| AI lab           | Model publisher.                                                    |
+| Inference        | Inference providers that can serve the model.                       |
+| Price            | Credit price or price range for the model.                          |
+| Cost parameters  | Pricing mode, such as per output, per second, resolution, or audio. |
+| Runs             | Platform run count for the model.                                   |
+| Yours            | Run count for the selected account.                                 |
+
+## Search and fullscreen view
+
+The search box filters by model identifier, AI lab, model type, cost parameter, and inference provider. The page displays 500 rows per page and includes a fullscreen view.
+
+## Schema and pricing source
+
+The dashboard table is a catalog view. Use the public model references for the request fields and prices that your integration should treat as canonical:
+
+| Reference                                         | Use it for                                               |
+| ------------------------------------------------- | -------------------------------------------------------- |
+| [Model schema](https://babysea.ai/model-schema)   | Supported fields, allowed values, and copyable examples. |
+| [Model pricing](https://babysea.ai/model-pricing) | Per-model credit prices and pricing modes.               |
+| [`GET /v1/library/models`](/setup/api#endpoints)  | Programmatic model catalog access.                       |
+
+Use the exact `model_identifier` shown in the table when calling the API or SDK.

@@ -1,0 +1,239 @@
+---
+title: 'SDK'
+description: 'Install the TypeScript SDK, create generations, handle errors, and verify webhooks.'
+---
+
+The `babysea` package calls the `/v1` API with typed responses, request timeouts, retry handling, and webhook signature verification.
+
+<CardGroup cols={2}>
+  <Card icon="npm" href="https://www.npmjs.com/package/babysea" title="npm">
+    Install the official TypeScript SDK.
+  </Card>
+  <Card
+    icon="github"
+    href="https://github.com/babysea-community/babysea"
+    title="GitHub"
+  >
+    View the package source and examples.
+  </Card>
+</CardGroup>
+
+## Install
+
+<CodeGroup>
+```bash npm
+npm install babysea
+```
+
+```bash pnpm
+pnpm add babysea
+```
+
+```bash yarn
+yarn add babysea
+```
+
+</CodeGroup>
+
+## Create a client
+
+```ts TypeScript
+import { BabySea } from 'babysea';
+
+const client = new BabySea({
+  apiKey: process.env.BABYSEA_API_KEY!,
+  region: 'us',
+});
+```
+
+| Option       | Type                | Default  | Description                                                   |
+| ------------ | ------------------- | -------- | ------------------------------------------------------------- |
+| `apiKey`     | string              | required | BabySea API key, for example `bye_...`.                       |
+| `region`     | `us`, `eu`, or `jp` | `us`     | Regional endpoint. Ignored when `baseUrl` is set.             |
+| `baseUrl`    | string              | none     | Full API origin override, without requiring a region.         |
+| `timeout`    | number              | `30000`  | Request timeout in milliseconds.                              |
+| `maxRetries` | number              | `2`      | Automatic retries for API errors where `retryable` is `true`. |
+
+## Generate an image
+
+```ts TypeScript
+const created = await client.generate('bfl/flux-schnell', {
+  generation_prompt: 'A baby seal playing on Arctic ice',
+  generation_ratio: '1:1',
+  generation_output_format: 'png',
+});
+
+console.log(created.data.generation_id);
+```
+
+`client.generate()` chooses the route from the request body:
+
+- no `generation_duration`: `POST /v1/generate/image/{model_identifier}`
+- `generation_duration` present: `POST /v1/generate/video/{model_identifier}`
+
+## Generate a video
+
+```ts TypeScript
+const created = await client.generate('google/veo-2', {
+  generation_prompt: 'A penguin swimming under Antarctic ice',
+  generation_duration: 5,
+});
+```
+
+## Idempotent retries
+
+Pass an `Idempotency-Key` to safely retry a generation request without creating duplicate work or duplicate charges. The SDK forwards it as the `Idempotency-Key` request header.
+
+```ts TypeScript
+import { randomUUID } from 'node:crypto';
+
+const idempotencyKey = randomUUID();
+
+const created = await client.generate(
+  'bfl/flux-schnell',
+  { generation_prompt: 'A baby seal playing on Arctic ice' },
+  { idempotencyKey },
+);
+
+if (created.idempotency_replayed) {
+  console.log('Got cached response for', idempotencyKey);
+}
+```
+
+Persist the key alongside the action that triggers the request, and reuse the same key for every retry of that action. See [idempotency](/setup/api#idempotency) for the replay window and full contract.
+
+## Poll a generation
+
+```ts TypeScript
+let generation = await client.getGeneration(created.data.generation_id);
+
+while (['pending', 'processing'].includes(generation.data.generation_status)) {
+  await new Promise((resolve) => setTimeout(resolve, 2_000));
+  generation = await client.getGeneration(created.data.generation_id);
+}
+
+if (generation.data.generation_status === 'succeeded') {
+  console.log(generation.data.generation_output_file);
+}
+```
+
+Use [webhooks](/setup/webhooks) for production paths that should not poll.
+
+## Generate and wait
+
+`client.generateAndWait()` creates a generation and polls until it reaches a terminal status. It returns the generation when `generation_status` is `succeeded` and throws `BabySeaGenerationFailedError` when the generation fails or is canceled. Use it for scripts and demos. For production throughput, prefer `client.generate()` with webhooks.
+
+```ts TypeScript
+const generation = await client.generateAndWait(
+  'bfl/flux-schnell',
+  {
+    generation_prompt: 'A baby seal playing on Arctic ice',
+    generation_ratio: '1:1',
+  },
+  {
+    timeout: 120_000,
+    interval: 2_000,
+  },
+);
+
+console.log(generation.data.generation_output_file);
+```
+
+`client.waitForGeneration()` accepts the same `timeout`, `interval`, and `signal` options when you already have a `generation_id`.
+
+## Client methods
+
+| Method                                                      | Endpoint                                                        |
+| ----------------------------------------------------------- | --------------------------------------------------------------- |
+| `client.status()`                                           | `GET /v1/status`                                                |
+| `client.usage(days?)`                                       | `GET /v1/usage`                                                 |
+| `client.account()`                                          | `GET /v1/user/account`                                          |
+| `client.billing()`                                          | `GET /v1/user/billing`                                          |
+| `client.estimate(modelIdentifier, options?)`                | `GET /v1/estimate/{model_identifier}`                           |
+| `client.generate(modelIdentifier, params, options?)`        | `POST /v1/generate/image/...` or `POST /v1/generate/video/...`  |
+| `client.generateAndWait(modelIdentifier, params, options?)` | `POST /v1/generate/...`, then `GET /v1/content/{generation_id}` |
+| `client.waitForGeneration(generationId, options?)`          | `GET /v1/content/{generation_id}` until terminal status         |
+| `client.getGeneration(generationId)`                        | `GET /v1/content/{generation_id}`                               |
+| `client.listGenerations({ limit, offset })`                 | `GET /v1/content/list`                                          |
+| `client.cancelGeneration(generationId)`                     | `POST /v1/content/generation/cancel/{generation_id}`            |
+| `client.deleteGeneration(generationId)`                     | `DELETE /v1/content/{generation_id}`                            |
+| `client.library.providers()`                                | `GET /v1/library/providers`                                     |
+| `client.library.models()`                                   | `GET /v1/library/models`                                        |
+| `client.health.providers()`                                 | `GET /v1/health/inference/providers`                            |
+| `client.health.models()`                                    | `GET /v1/health/inference/models`                               |
+| `client.health.storage()`                                   | `GET /v1/health/storage`                                        |
+| `client.health.cache()`                                     | `GET /v1/health/cache`                                          |
+
+## Estimate cost
+
+```ts TypeScript
+const estimate = await client.estimate('google/veo-2', {
+  count: 1,
+  duration: 5,
+});
+
+console.log(estimate.data.cost_total_consumed);
+```
+
+For resolution-priced or audio-priced models, pass `resolution` and `audio` when relevant.
+
+## Errors and retries
+
+```ts TypeScript
+import { BabySeaError, BabySeaRetryError, BabySeaTimeoutError } from 'babysea';
+
+try {
+  await client.generate('bfl/flux-schnell', {
+    generation_prompt: 'A baby seal playing on Arctic ice',
+  });
+} catch (error) {
+  if (error instanceof BabySeaRetryError) {
+    console.error('Retries exhausted', error.attempts, error.lastError);
+  } else if (error instanceof BabySeaTimeoutError) {
+    console.error('Request timed out');
+  } else if (error instanceof BabySeaError) {
+    console.error(error.status, error.code, error.type, error.retryable);
+  }
+}
+```
+
+The SDK retries structured API errors with `retryable: true`, up to `maxRetries`. It also retries transient network failures for idempotent methods. For `POST` generation requests, network retries require an `Idempotency-Key`.
+
+## Verify webhooks
+
+```ts TypeScript
+import { isGenerationCompleted, verifyWebhook } from 'babysea/webhooks';
+
+export async function POST(request: Request) {
+  const rawBody = await request.text();
+  const signature = request.headers.get('X-BabySea-Signature') ?? '';
+
+  const event = await verifyWebhook(
+    rawBody,
+    signature,
+    process.env.BABYSEA_WEBHOOK_SECRET!,
+  );
+
+  if (isGenerationCompleted(event)) {
+    console.log(event.webhook_data.generation_output_file);
+  }
+
+  return new Response('ok');
+}
+```
+
+`verifyWebhook()` checks the `t=<unix_timestamp>,v1=<hmac>` signature, validates the timestamp tolerance, and returns the parsed payload.
+
+## Runtime support
+
+The SDK uses web-standard `fetch` and `crypto.subtle` APIs.
+
+| Runtime            | Supported |
+| ------------------ | :-------: |
+| Node.js 18+        |    Yes    |
+| Deno               |    Yes    |
+| Bun                |    Yes    |
+| Cloudflare Workers |    Yes    |
+| Vercel Edge        |    Yes    |
+| Netlify Edge       |    Yes    |
+| Modern browsers    |    Yes    |

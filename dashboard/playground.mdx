@@ -1,0 +1,110 @@
+---
+title: 'Playground'
+description: 'Use the browser playground to test model schemas, regions, generation requests, and content actions.'
+---
+
+The playground is a public browser console for testing BabySea API requests. It uses the same `/v1` API routes as your production code.
+
+<Card
+  title="Open playground"
+  icon="terminal"
+  href="https://us.babysea.ai/playground"
+>
+  Test image and video generation from the browser.
+</Card>
+
+## What you can test
+
+| Area       | Details                                                          |
+| ---------- | ---------------------------------------------------------------- |
+| Models     | Image and video tabs with searchable model selection.            |
+| Schema     | Fields are derived from the registered model schemas.            |
+| Regions    | `us`, `eu`, and `jp` endpoints.                                  |
+| Requests   | `POST /v1/generate/image/...` and `POST /v1/generate/video/...`. |
+| Status     | Live status updates with polling fallback.                       |
+| Management | Get, cancel, or delete a generation by ID.                       |
+
+## API key handling
+
+The playground requires an API key for requests.
+
+- The key is typed manually.
+- The key must be locked before sending.
+- The key is never persisted to storage.
+- The key is cleared when the tab closes or reloads.
+- Control characters and bidirectional override characters are rejected.
+
+<Warning>
+  Use a scoped test key when possible. Do not paste production keys into shared
+  machines or browser profiles.
+</Warning>
+
+## Region selection
+
+Choose the same region as your API key:
+
+| Region value | API host            |
+| ------------ | ------------------- |
+| `us`         | `api.us.babysea.ai` |
+| `eu`         | `api.eu.babysea.ai` |
+| `jp`         | `api.jp.babysea.ai` |
+
+Requests fail authentication if the key and regional hostname do not match.
+
+## Request editor
+
+The form updates when you switch models. Supported fields can include:
+
+- `generation_prompt`
+- `generation_ratio`
+- `generation_output_format`
+- `generation_output_number`
+- `generation_input_file`
+- `generation_input_file_last_content`
+- `generation_duration`
+- `generation_resolution`
+- `generation_generate_audio`
+- model-specific fields
+
+The playground preserves your selected tab and model in session storage. It does not store the API key or request body.
+
+## Send a generation
+
+<Steps>
+  <Step title="Select image or video">
+    Open the tab that matches the model type.
+  </Step>
+  <Step title="Choose a model">Search by AI lab or model identifier.</Step>
+  <Step title="Enter and lock your key">
+    Paste a `bye_...` key for the same region and lock it.
+  </Step>
+  <Step title="Fill in request fields">
+    Use the generated form to send only fields supported by the selected model.
+  </Step>
+  <Step title="Send the request">
+    The playground calls the corresponding `/v1/generate/...` route and shows
+    the response JSON.
+  </Step>
+</Steps>
+
+## Track results
+
+After a request starts, the response includes a `generation_id`. The playground tracks the generation with realtime updates and falls back to polling if the realtime channel disconnects.
+
+The response panel truncates very large JSON for display, but copied payloads include the full response subject to browser clipboard limits.
+
+## Manage a generation
+
+Use the management section with a generation UUID:
+
+| Action   | API route                                            | Notes                                                                 |
+| -------- | ---------------------------------------------------- | --------------------------------------------------------------------- |
+| Get info | `GET /v1/content/{generation_id}`                    | Fetches the current generation record.                                |
+| Cancel   | `POST /v1/content/generation/cancel/{generation_id}` | Works only while the generation is still cancelable.                  |
+| Delete   | `DELETE /v1/content/{generation_id}`                 | Deletes the generation and stored output files. This is irreversible. |
+
+Generation IDs must be valid UUIDs.
+
+## Network safety
+
+The playground validates request hosts before sending. It blocks private, localhost, single-label, reserved-TLD, and internal hostnames to avoid accidental or unsafe destinations.

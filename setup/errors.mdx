@@ -1,0 +1,125 @@
+---
+title: 'Errors'
+description: 'Understand BabySea error envelopes, codes, retry behavior, and rate-limit headers.'
+---
+
+BabySea returns structured `BSE` errors from application routes. Each error includes a stable code, a machine-readable type, a human-readable message, and a `retryable` boolean.
+
+## Error envelope
+
+```json JSON
+{
+  "status": "error",
+  "request_id": "req_...",
+  "error": {
+    "code": "BSE1005",
+    "type": "rate_limit_exceeded",
+    "message": "Rate limit exceeded. Please retry after the period indicated in the Retry-After header.",
+    "retryable": true,
+    "details": {
+      "retry_after_seconds": 17,
+      "limit": 60
+    }
+  }
+}
+```
+
+When multiple providers fail during failover, the error can include `provider_errors` with provider-level details.
+
+## Retry guidance
+
+| Condition                         | Retry? | Notes                                                                  |
+| --------------------------------- | :----: | ---------------------------------------------------------------------- |
+| `retryable: true`                 |  Yes   | Use exponential backoff. The SDK retries these automatically.          |
+| HTTP `429`                        |  Yes   | Respect `Retry-After`.                                                 |
+| HTTP `4xx` except `429`           |   No   | Fix authentication, scope, input, or account state.                    |
+| HTTP `5xx` with `retryable: true` |  Yes   | Usually provider or transient infrastructure failure.                  |
+| `provider_credits_exhausted`      |   No   | Choose another model/provider or wait for provider capacity to return. |
+
+<Note>
+  Use the `retryable` field, not only the HTTP status code. Some inference
+  provider failures use `5xx` but are not retryable.
+</Note>
+
+## Authentication and authorization
+
+| Code      | Type                         | HTTP | Retryable | Meaning                                                     |
+| --------- | ---------------------------- | ---- | :-------: | ----------------------------------------------------------- |
+| `BSE1001` | `authentication_required`    | 401  |    No     | Missing API key.                                            |
+| `BSE1002` | `authentication_failed`      | 401  |    No     | Invalid or expired API key.                                 |
+| `BSE1003` | `insufficient_permissions`   | 403  |    No     | Key lacks the required scope.                               |
+| `BSE1004` | `insufficient_credits`       | 402  |    No     | Account balance cannot cover the request.                   |
+| `BSE1005` | `rate_limit_exceeded`        | 429  |    Yes    | Account request limit exceeded.                             |
+| `BSE1006` | `auth_rate_limited`          | 429  |    Yes    | Too many authentication attempts from the same IP.          |
+| `BSE1007` | `ip_not_allowed`             | 403  |    No     | Client IP is not in the key allowlist.                      |
+| `BSE1008` | `account_not_found`          | 404  |    No     | The account linked to the key was not found.                |
+| `BSE1009` | `concurrency_limit_exceeded` | 429  |    Yes    | Too many concurrent generations in flight for this account. |
+
+## Input validation
+
+| Code      | Type                               | HTTP | Retryable | Meaning                                                         |
+| --------- | ---------------------------------- | ---- | :-------: | --------------------------------------------------------------- |
+| `BSE2001` | `invalid_input`                    | 400  |    No     | Request body has invalid parameters.                            |
+| `BSE2002` | `file_too_large`                   | 422  |    No     | File dimensions exceed model limits.                            |
+| `BSE2003` | `file_too_small`                   | 422  |    No     | File dimensions are below model minimums.                       |
+| `BSE2004` | `unsupported_file_format`          | 422  |    No     | File type is unsupported.                                       |
+| `BSE2005` | `file_load_error`                  | 422  |    No     | File could not be loaded or processed.                          |
+| `BSE2006` | `content_policy_violation`         | 422  |    No     | Input was rejected by safety filters.                           |
+| `BSE2007` | `file_size_exceeded`               | 422  |    No     | File exceeds byte-size limits.                                  |
+| `BSE2008` | `parameter_out_of_range`           | 422  |    No     | Parameter value is outside the allowed range.                   |
+| `BSE2009` | `file_download_error`              | 422  |    No     | BabySea could not download a file URL.                          |
+| `BSE2010` | `request_body_too_large`           | 413  |    No     | Request body exceeds the maximum allowed size.                  |
+| `BSE2011` | `generation_not_found`             | 404  |    No     | Generation does not exist or belongs to another account.        |
+| `BSE2012` | `generation_not_cancelable`        | 409  |    No     | Generation already completed, failed, or was canceled.          |
+| `BSE2013` | `generation_cancel_window_expired` | 409  |    No     | Generations can only be canceled within 12 seconds of creation. |
+| `BSE2014` | `unsafe_file_url`                  | 422  |    No     | URL targets private, reserved, or non-HTTPS infrastructure.     |
+| `BSE2015` | `idempotency_key_conflict`         | 409  |    No     | `Idempotency-Key` was reused with a different request body.     |
+| `BSE2016` | `idempotency_request_in_progress`  | 409  |    Yes    | Request with this `Idempotency-Key` is still being processed.   |
+| `BSE2017` | `endpoint_not_found`               | 404  |    No     | The requested endpoint does not exist.                          |
+
+## Model and configuration
+
+| Code      | Type                    | HTTP | Retryable | Meaning                                             |
+| --------- | ----------------------- | ---- | :-------: | --------------------------------------------------- |
+| `BSE3001` | `model_not_found`       | 404  |    No     | Unknown model identifier.                           |
+| `BSE3002` | `model_not_configured`  | 500  |    No     | Model exists but configuration is incomplete.       |
+| `BSE3003` | `feature_not_supported` | 422  |    No     | Field or combination is not supported by the model. |
+| `BSE3004` | `model_type_mismatch`   | 422  |    No     | Model type does not match the image or video route. |
+
+## Inference provider errors
+
+| Code      | Type                           | HTTP | Retryable | Meaning                                            |
+| --------- | ------------------------------ | ---- | :-------: | -------------------------------------------------- |
+| `BSE4001` | `provider_timeout`             | 504  |    Yes    | Inference provider did not respond in time.        |
+| `BSE4002` | `provider_out_of_memory`       | 502  |    Yes    | Inference provider ran out of memory.              |
+| `BSE4003` | `all_providers_failed`         | 502  |    Yes    | Every inference provider in the chain failed.      |
+| `BSE4004` | `provider_internal_error`      | 502  |    Yes    | Inference provider returned an internal error.     |
+| `BSE4005` | `provider_unavailable`         | 503  |    Yes    | Inference provider is temporarily unavailable.     |
+| `BSE4006` | `prediction_canceled`          | 409  |    No     | Inference provider prediction was canceled.        |
+| `BSE4007` | `provider_health_check_failed` | 502  |    Yes    | Inference provider failed health checks.           |
+| `BSE4008` | `provider_start_error`         | 502  |    Yes    | Inference provider failed to start the prediction. |
+| `BSE4009` | `provider_upload_failed`       | 502  |    Yes    | Upload to inference provider failed.               |
+| `BSE4010` | `provider_credits_exhausted`   | 502  |    No     | Inference provider capacity is exhausted.          |
+
+## Internal errors
+
+| Code      | Type                    | HTTP | Retryable | Meaning                            |
+| --------- | ----------------------- | ---- | :-------: | ---------------------------------- |
+| `BSE5001` | `internal_server_error` | 500  |    No     | Unexpected server error.           |
+| `BSE5002` | `database_error`        | 500  |    No     | Database read or write failed.     |
+| `BSE5003` | `storage_error`         | 500  |    No     | File storage read or write failed. |
+
+## Rate-limit headers
+
+Rate-limited routes include these headers:
+
+| Header                  | Description                                        |
+| ----------------------- | -------------------------------------------------- |
+| `X-RateLimit-Limit`     | Maximum requests in the current 60-second window.  |
+| `X-RateLimit-Remaining` | Remaining requests in the current window.          |
+| `X-RateLimit-Reset`     | Unix timestamp when the window resets.             |
+| `Retry-After`           | Present on `429`; seconds to wait before retrying. |
+
+## Malformed requests
+
+Malformed requests can be rejected before BabySea returns a structured `BSE` envelope. Validate the method, path, body shape, and headers before retrying.

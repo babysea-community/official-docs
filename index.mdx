@@ -1,0 +1,90 @@
+---
+title: 'Welcome'
+description: 'Use BabySea to run image and video generation through one regional API and one response schema.'
+---
+
+BabySea is the execution control plane for generative media. Send one normalized request, run it across inference providers, and receive one consistent response shape.
+
+<CardGroup cols={3}>
+  <Card icon="rocket" href="/quickstart" title="Quickstart">
+    Create a key, submit a generation, and fetch the result.
+  </Card>
+  <Card icon="server" href="/setup/api" title="API basics">
+    Regional base URLs, authentication, endpoints, envelopes, and rate limits.
+  </Card>
+  <Card
+    icon="wand-magic-sparkles"
+    href="/setup/generations"
+    title="Generations"
+  >
+    Create, track, cancel, delete, and list image and video generations.
+  </Card>
+  <Card icon="code" href="/setup/sdk" title="TypeScript SDK">
+    Use the official client for retries, typed responses, and webhook
+    verification.
+  </Card>
+  <Card icon="link" href="/setup/webhooks" title="Webhooks">
+    Receive, verify, and process signed generation and credit events.
+  </Card>
+  <Card icon="terminal" href="/dashboard/playground" title="Playground">
+    Test models in the browser without writing setup code.
+  </Card>
+</CardGroup>
+
+## What BabySea gives you
+
+| Capability         | What it means                                                                                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unified schema     | Common fields such as `generation_prompt`, `generation_ratio`, `generation_input_file`, and `generation_provider_order` work across supported models.            |
+| Provider routing   | Requests use `generation_provider_order` for the selected model. Failed inference providers can be skipped and retried through the chain.                        |
+| Standard responses | Success responses include `status`, `request_id`, `message`, `timestamp`, and `data`. Error responses include `status`, `request_id`, and `error`.               |
+| Credit accounting  | One credit equals $1 USD. Credits are reserved before generation, charged on success, and refunded on failure or eligible cancellation.                          |
+| Operational tools  | Metrics, playground, models, API keys, webhooks, logs, credits, notifications, domains, members, settings, billing, and activity are managed from the dashboard. |
+
+## Core API flow
+
+<Steps>
+  <Step title="Create an API key">
+    Create a key from the dashboard and choose a preset such as `Generate Only`,
+    `Read Only`, or `Full Access`.
+  </Step>
+  <Step title="Submit a generation">
+    Call `POST /v1/generate/image/{model_identifier}` or `POST
+    /v1/generate/video/{model_identifier}` with a Bearer key.
+  </Step>
+  <Step title="Track the job">
+    Use `GET /v1/content/{generation_id}` to poll, or subscribe to
+    [webhook](/setup/webhooks) events for asynchronous delivery.
+  </Step>
+  <Step title="Review usage">
+    Use logs, credits, activity, and billing pages to understand cost, failures,
+    and team activity.
+  </Step>
+</Steps>
+
+## Regions
+
+| Region value | Base URL                       | SDK value |
+| ------------ | ------------------------------ | --------- |
+| `us`         | `https://api.us.babysea.ai/v1` | `us`      |
+| `eu`         | `https://api.eu.babysea.ai/v1` | `eu`      |
+| `jp`         | `https://api.jp.babysea.ai/v1` | `jp`      |
+
+<Note>
+  API keys are region-specific. Use the API hostname that matches the region
+  where the key was created.
+</Note>
+
+## Dashboard guides
+
+<CardGroup cols={3}>
+  <Card icon="chart-line" href="/dashboard/metrics" title="Metrics" />
+  <Card icon="robot" href="/dashboard/models" title="Models" />
+  <Card icon="key" href="/dashboard/api-keys" title="API keys" />
+  <Card icon="link" href="/dashboard/webhook" title="Webhooks" />
+  <Card icon="list" href="/dashboard/logs" title="Logs" />
+  <Card icon="coins" href="/dashboard/credits" title="Credits" />
+  <Card icon="bell" href="/setup/notifications" title="Notifications" />
+  <Card icon="globe" href="/dashboard/domains" title="Domains" />
+  <Card icon="credit-card" href="/dashboard/billing" title="Billing" />
+</CardGroup>

@@ -1,0 +1,94 @@
+---
+title: 'Credits'
+description: 'Understand balances, reservations, charges, refunds, alerts, and the credit ledger.'
+---
+
+Credits are BabySea's spending balance. One credit equals $1 USD, and balances are stored to three decimal places.
+
+## Balance
+
+The Credits page shows the current account balance and the ledger of balance movements.
+
+| Concept       | Meaning                                    |
+| ------------- | ------------------------------------------ |
+| Balance       | Current available credits for the account. |
+| Ledger        | Immutable record of credit movements.      |
+| Amount        | Credit amount for that ledger event.       |
+| Balance after | Balance after the movement was applied.    |
+
+## Ledger event types
+
+| Type      | Effect            | Created when                                                     |
+| --------- | ----------------- | ---------------------------------------------------------------- |
+| `reserve` | Deducts credits   | A generation starts and BabySea reserves the estimated cost.     |
+| `charge`  | No balance change | A reserved generation succeeds and the reservation is confirmed. |
+| `refund`  | Adds credits back | A reserved generation fails or is canceled before charge.        |
+| `add`     | Adds credits      | Subscription renewal, welcome credit, or credit pack purchase.   |
+
+Credit movements are idempotent for generation charges, refunds, and credit additions.
+
+## Generation credit flow
+
+<Steps>
+  <Step title="Estimate">
+    BabySea calculates the model cost from model pricing, output count,
+    duration, resolution, and audio settings when applicable.
+  </Step>
+  <Step title="Reserve">
+    BabySea checks the account balance and reserves the estimated cost. If the
+    balance is too low, the API returns `BSE1004`.
+  </Step>
+  <Step title="Charge or refund">
+    Successful jobs create a `charge` ledger entry. Failed or eligible canceled
+    jobs create a `refund` entry and restore credits.
+  </Step>
+</Steps>
+
+## Welcome credits
+
+New users receive $1.000 in welcome credits once.
+
+## Credit packs
+
+Credit packs are purchased from [billing](/dashboard/billing), not from the Credits page.
+
+| Pack   | Credits added |
+| ------ | ------------- |
+| $10    | 10.000        |
+| $25    | 25.000        |
+| $50    | 50.000        |
+| $100   | 100.000       |
+| $500   | 500.000       |
+| $1,000 | 1,000.000     |
+
+Credit packs require an active subscription and can be purchased only by the `primary-owner`.
+
+## Low-balance alerts
+
+Low-balance alerts are configured from the **Billing** page in the **Low Balance Alerts** card, and from the [notifications](/setup/notifications) page. The default is a single threshold at `$0.50`. You can replace the threshold list with up to 10 positive dollar amounts.
+
+Alerts can deliver through:
+
+- in-app notification
+- email
+- `credits.low_balance` webhook event
+
+Each threshold fires once while the balance remains below it. Adding or refunding credits re-arms thresholds that the balance rises above.
+
+See [webhooks](/setup/webhooks#credit-alert-payload) for the `credits.low_balance` payload.
+
+## Search and export
+
+The ledger table shows type, amount, balance, model, generation ID, description, and timestamp. Search covers type, model, generation ID, description, and amount. The page displays 300 rows per page and includes a fullscreen view.
+
+## Retention
+
+Credit audit trails have longer retention than operational logs.
+
+| Plan       | Credit ledger retention |
+| ---------- | ----------------------- |
+| Free       | 30 days                 |
+| Starter    | 90 days                 |
+| Pro        | 180 days                |
+| Scale      | 1 year                  |
+| Enterprise | 1 year                  |

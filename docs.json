@@ -1,0 +1,295 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "aspen",
+  "name": "BabySea Docs",
+  "colors": {
+    "primary": "#48d1cc",
+    "light": "#0c9b97",
+    "dark": "#0c9b97"
+  },
+  "favicon": "/static/favicon.ico",
+  "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "FAQ",
+          "icon": "comment-question",
+          "color": {
+            "light": "#0c9b97",
+            "dark": "#0c9b97"
+          },
+          "href": "https://babysea.ai/faq"
+        },
+        {
+          "anchor": "Pricing plan",
+          "icon": "credit-card",
+          "color": {
+            "light": "#0c9b97",
+            "dark": "#0c9b97"
+          },
+          "href": "https://babysea.ai/pricing-plan"
+        },
+        {
+          "anchor": "Model pricing",
+          "icon": "dollar-sign",
+          "color": {
+            "light": "#0c9b97",
+            "dark": "#0c9b97"
+          },
+          "href": "https://babysea.ai/model-pricing"
+        },
+        {
+          "anchor": "Model schema",
+          "icon": "file-code",
+          "color": {
+            "light": "#0c9b97",
+            "dark": "#0c9b97"
+          },
+          "href": "https://babysea.ai/model-schema"
+        }
+      ]
+    },
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Introduction",
+            "icon": "house",
+            "pages": ["index"]
+          },
+          {
+            "group": "Get started",
+            "icon": "rocket",
+            "pages": [
+              "quickstart",
+              "setup/api",
+              "setup/generations",
+              "setup/sdk",
+              "setup/webhooks",
+              "setup/errors",
+              "setup/notifications"
+            ]
+          },
+          {
+            "group": "Dashboard",
+            "icon": "gauge",
+            "pages": [
+              "dashboard/metrics",
+              "dashboard/api-keys",
+              "dashboard/webhook",
+              "dashboard/logs",
+              "dashboard/credits",
+              "dashboard/playground",
+              "dashboard/models",
+              "dashboard/domains",
+              "dashboard/settings",
+              "dashboard/members",
+              "dashboard/billing",
+              "dashboard/my-profile",
+              "dashboard/activity"
+            ]
+          },
+          {
+            "group": "Updates",
+            "icon": "megaphone",
+            "pages": ["changelog"]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": "/static/logo.svg",
+  "navbar": {
+    "links": [
+      {
+        "label": "Playground",
+        "href": "https://us.babysea.ai/playground"
+      },
+      {
+        "label": "Status",
+        "href": "https://status.babysea.ai"
+      },
+      {
+        "label": "Support",
+        "href": "https://babysea.ai/support"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://us.babysea.ai/home"
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
+  "footer": {
+    "socials": {
+      "linkedin": "https://www.linkedin.com/company/babysea-ai",
+      "github": "https://github.com/babysea-community"
+    },
+    "links": [
+      {
+        "header": "Product",
+        "items": [
+          {
+            "label": "FAQ",
+            "href": "https://babysea.ai/faq"
+          },
+          {
+            "label": "Pricing plan",
+            "href": "https://babysea.ai/pricing-plan"
+          },
+          {
+            "label": "Model pricing",
+            "href": "https://babysea.ai/model-pricing"
+          },
+          {
+            "label": "Model schema",
+            "href": "https://babysea.ai/model-schema"
+          },
+          {
+            "label": "Demo",
+            "href": "https://babysea.ai/demo"
+          }
+        ]
+      },
+      {
+        "header": "Infrastructure",
+        "items": [
+          {
+            "label": "Runtime control",
+            "href": "https://babysea.ai/#runtime-control"
+          },
+          {
+            "label": "API security",
+            "href": "https://babysea.ai/#api-security"
+          },
+          {
+            "label": "Auto failover",
+            "href": "https://babysea.ai/#auto-failover"
+          },
+          {
+            "label": "Signed webhooks",
+            "href": "https://babysea.ai/#signed-webhooks"
+          },
+          {
+            "label": "Multi-region",
+            "href": "https://babysea.ai/#multi-region"
+          },
+          {
+            "label": "Enterprise",
+            "href": "https://babysea.ai/#enterprise"
+          }
+        ]
+      },
+      {
+        "header": "Company",
+        "items": [
+          {
+            "label": "About us",
+            "href": "https://babysea.ai/about"
+          },
+          {
+            "label": "The team",
+            "href": "https://babysea.ai/team"
+          },
+          {
+            "label": "Blog",
+            "href": "https://babysea.ai/blog"
+          },
+          {
+            "label": "Terms of use",
+            "href": "https://babysea.ai/terms-of-use"
+          },
+          {
+            "label": "Privacy policy",
+            "href": "https://babysea.ai/privacy-policy"
+          },
+          {
+            "label": "Trust center",
+            "href": "https://trust.babysea.ai"
+          },
+          {
+            "label": "Support",
+            "href": "https://babysea.ai/support"
+          }
+        ]
+      },
+      {
+        "header": "Developers",
+        "items": [
+          {
+            "label": "Docs",
+            "href": "https://docs.babysea.ai"
+          },
+          {
+            "label": "Playground",
+            "href": "https://us.babysea.ai/playground"
+          },
+          {
+            "label": "Changelog",
+            "href": "https://docs.babysea.ai/changelog"
+          },
+          {
+            "label": "Status",
+            "href": "https://status.babysea.ai"
+          },
+          {
+            "label": "Open source",
+            "href": "https://github.com/babysea-community"
+          }
+        ]
+      }
+    ]
+  },
+  "background": {
+    "decoration": "windows",
+    "color": {
+      "light": "#fafafa",
+      "dark": "#09090b"
+    }
+  },
+  "appearance": {
+    "default": "system"
+  },
+  "description": "Official BabySea documentation for the regional API, TypeScript SDK, webhooks, dashboard, billing, and changelog.",
+  "styling": {
+    "eyebrows": "section",
+    "latex": true
+  },
+  "icons": {
+    "library": "fontawesome"
+  },
+  "seo": {
+    "indexing": "all",
+    "metatags": {
+      "og:image": "https://cdn.babysea.live/assets/logo/company/card/docs.png",
+      "og:image:width": "1200",
+      "og:image:height": "630",
+      "twitter:image": "https://cdn.babysea.live/assets/logo/company/card/docs.png",
+      "twitter:card": "summary_large_image"
+    }
+  },
+  "banner": {
+    "content": "Get [$1 in free credits](https://us.babysea.ai/auth/sign-up) for API testing",
+    "dismissible": true
+  },
+  "thumbnails": {
+    "background": "/static/docs.png"
+  },
+  "metadata": {
+    "timestamp": false
+  }
+}

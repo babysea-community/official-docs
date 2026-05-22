@@ -1,0 +1,32 @@
+---
+title: 'Metrics'
+description: 'Review account usage, generation outcomes, webhook delivery, credits, and latency from the dashboard.'
+---
+
+Metrics shows account-level usage for the selected team account. Use it to check request volume, generation outcomes, credit spend, webhook delivery, and latency trends.
+
+## Access
+
+Metrics is visible to every team role. The page has no write actions.
+
+## Sections
+
+| Section            | Shows                                                                                         |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| Plan card          | Current plan, subscription state, renewal date, credit balance, and credits used this period. |
+| Content generation | Succeeded, failed, canceled, and failover counts, plus model, provider, and output summaries. |
+| API usage          | Requests by status, method, endpoint, API key, and webhook delivery outcome.                  |
+| Performance        | `P50`, `P95`, `P99`, average latency, inference time, and generation error breakdowns.        |
+
+## Time windows
+
+Metric cards and charts expose period selectors where history is available. Retention depends on your plan. See [billing](/dashboard/billing#retention-by-plan) for the canonical retention windows.
+
+## Related pages
+
+| Page                            | Use it for                                       |
+| ------------------------------- | ------------------------------------------------ |
+| [Logs](/dashboard/logs)         | Inspect individual API requests and error codes. |
+| [Credits](/dashboard/credits)   | Review balance movements and generation costs.   |
+| [Webhook](/dashboard/webhook)   | Inspect endpoint deliveries and queued events.   |
+| [Activity](/dashboard/activity) | Review account-level audit events.               |

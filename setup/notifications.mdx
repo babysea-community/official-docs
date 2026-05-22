@@ -1,0 +1,46 @@
+---
+title: 'Notifications'
+description: 'Manage low-balance alert thresholds and delivery channels for an account.'
+---
+
+Notifications controls account-level low-balance alert preferences. The same settings can also appear in the Billing credit balance card.
+
+## Access
+
+| Role            | Can view | Can manage |
+| --------------- | :------: | :--------: |
+| `primary-owner` |   Yes    |    Yes     |
+| `owner`         |   Yes    |     No     |
+| `member`        |   Yes    |     No     |
+
+Only the `primary-owner` can change thresholds or delivery channels.
+
+## Low-balance settings
+
+| Setting    | Description                                                           |
+| ---------- | --------------------------------------------------------------------- |
+| Enabled    | Turns low-balance alerts on or off for the account.                   |
+| Thresholds | Dollar amounts that trigger alerts when the balance drops below them. |
+| In-app     | Sends an in-app notification.                                         |
+| Email      | Sends an email to the account owner.                                  |
+| Webhook    | Sends the `credits.low_balance` webhook event.                        |
+
+See [Credits, low-balance alerts](/dashboard/credits#low-balance-alerts) for the default threshold, threshold limit, and alert behavior.
+
+## Behavior
+
+Each threshold fires once while the balance remains below it. Adding or refunding credits re-arms thresholds that the balance rises above.
+
+See [webhooks](/setup/webhooks#credit-alert-payload) for the `credits.low_balance` payload.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card icon="credit-card" href="/dashboard/billing" title="Billing">
+    View plan status, credit balance, credit packs, and embedded alert settings.
+  </Card>
+  <Card icon="coins" href="/dashboard/credits" title="Credits">
+    Review credit ledger entries, reservations, charges, refunds, and alert
+    behavior.
+  </Card>
+</CardGroup>

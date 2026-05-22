@@ -1,0 +1,69 @@
+---
+title: 'Billing'
+description: 'Manage subscriptions, credit packs, billing portal access, and low-balance alerts.'
+---
+
+Billing shows the account plan, credit balance, checkout actions, billing portal access, credit packs, and low-balance alert settings.
+
+## Access
+
+| Role            | Can view billing | Can subscribe or purchase |
+| --------------- | :--------------: | :-----------------------: |
+| `primary-owner` |       Yes        |            Yes            |
+| `owner`         |       Yes        |            No             |
+| `member`        |       Yes        |            No             |
+
+Only the `primary-owner` can start checkout, buy credit packs, and manage low-balance alert settings from this page.
+
+## Plans
+
+| Plan       | Monthly credits   | Yearly credits    | General requests/min | Generations/min | Output file retention |
+| ---------- | ----------------- | ----------------- | -------------------- | --------------- | --------------------- |
+| Free       | $1 welcome credit | $1 welcome credit | 30                   | 10              | 1 hour                |
+| Starter    | $9                | $90               | 60                   | 20              | 12 hours              |
+| Pro        | $29               | $290              | 150                  | 50              | 1 day                 |
+| Scale      | $79               | $790              | 300                  | 100             | 5 days                |
+| Enterprise | $249              | $2,490            | 600                  | 200             | 7 days                |
+
+Credit allocation is added to the account credit balance. One credit equals $1 USD.
+
+## Credit packs
+
+Credit packs are one-time add-ons on top of an active subscription.
+
+| Pack   | Credits added |
+| ------ | ------------- |
+| $10    | 10.000        |
+| $25    | 25.000        |
+| $50    | 50.000        |
+| $100   | 100.000       |
+| $500   | 500.000       |
+| $1,000 | 1,000.000     |
+
+Requirements:
+
+- the account has an active subscription
+- the user is the `primary-owner`
+- checkout completes successfully with the billing provider
+
+If the subscription is no longer active by the time the payment webhook is processed, credits are not allocated automatically and the payment requires manual review.
+
+## Billing portal
+
+When an account has a billing customer, the page shows a billing portal action for payment methods, invoices, and subscription management.
+
+If no billing data exists yet, the page shows checkout options for available plans.
+
+## Low-balance alerts
+
+The **Low Balance Alerts** card lets the `primary-owner` manage alert thresholds and delivery channels. The same settings are available from [notifications](/setup/notifications). See [credits, low-balance alerts](/dashboard/credits#low-balance-alerts) for the defaults, channels, and webhook event.
+
+## Retention by plan
+
+| Data category      | Free    | Starter | Pro      | Scale    | Enterprise |
+| ------------------ | ------- | ------- | -------- | -------- | ---------- |
+| Generation records | 1 day   | 7 days  | 30 days  | 180 days | 1 year     |
+| API request logs   | 1 day   | 7 days  | 30 days  | 180 days | 1 year     |
+| Webhook event logs | 1 day   | 7 days  | 30 days  | 180 days | 1 year     |
+| Activity logs      | 1 day   | 7 days  | 30 days  | 180 days | 1 year     |
+| Credit ledger      | 30 days | 90 days | 180 days | 1 year   | 1 year     |

@@ -1,0 +1,178 @@
+---
+title: 'Webhooks'
+description: 'Receive, verify, and process signed BabySea webhook events.'
+---
+
+Webhooks send signed HTTP `POST` events to your server when generation state changes or a low-credit threshold is crossed.
+
+## Event types
+
+| Event                  | Sent when                                                     |
+| ---------------------- | ------------------------------------------------------------- |
+| `generation.started`   | A generation is accepted and processing begins.               |
+| `generation.completed` | A generation succeeds and output files are available.         |
+| `generation.failed`    | A generation fails.                                           |
+| `generation.canceled`  | A generation is canceled.                                     |
+| `credits.low_balance`  | The account balance crosses an enabled low-balance threshold. |
+| `webhook.test`         | You send a test event from the dashboard.                     |
+
+## Set up an endpoint
+
+<Steps>
+  <Step title="Create a receiver">
+    Add an HTTPS route in your application that accepts `POST` requests and
+    reads the raw request body before parsing JSON.
+  </Step>
+  <Step title="Register the endpoint">
+    Open **Webhook** in the dashboard, add the HTTPS URL, and choose the events
+    your server handles. Endpoint URLs must use public HTTPS on the default
+    HTTPS port and must not rely on redirects.
+  </Step>
+  <Step title="Store the secret">
+    Copy the `whsec_...` signing secret and store it in your secrets manager.
+    BabySea shows it once.
+  </Step>
+  <Step title="Send a test event">
+    Click **Send test event** from the endpoint details page. Return any `2xx`
+    status when verification succeeds.
+  </Step>
+</Steps>
+
+## Delivery headers
+
+Every webhook delivery includes these headers:
+
+| Header                  | Value                                       |
+| ----------------------- | ------------------------------------------- |
+| `Content-Type`          | `application/json`                          |
+| `X-BabySea-Signature`   | `t=<unix_timestamp>,v1=<hmac_sha256_hex>`   |
+| `X-BabySea-Event`       | Event type, such as `generation.completed`. |
+| `X-BabySea-Timestamp`   | ISO timestamp for the delivery.             |
+| `X-BabySea-Delivery-Id` | Unique delivery UUID.                       |
+
+## Verify signatures
+
+BabySea signs the exact raw JSON body with HMAC-SHA256. The signed payload is:
+
+```text
+<unix_timestamp>.<raw_json_body>
+```
+
+Use `verifyWebhook()` from the TypeScript SDK when possible.
+
+```ts TypeScript
+import {
+  isCreditLowBalance,
+  isGenerationCompleted,
+  verifyWebhook,
+} from 'babysea/webhooks';
+
+export async function POST(request: Request) {
+  const rawBody = await request.text();
+  const signature = request.headers.get('X-BabySea-Signature') ?? '';
+
+  const event = await verifyWebhook(
+    rawBody,
+    signature,
+    process.env.BABYSEA_WEBHOOK_SECRET!,
+  );
+
+  if (isGenerationCompleted(event)) {
+    await saveOutput(
+      event.webhook_data.generation_id,
+      event.webhook_data.generation_output_file ?? [],
+    );
+  }
+
+  if (isCreditLowBalance(event)) {
+    await notifyBillingOwner(event.webhook_data.current_balance);
+  }
+
+  return new Response('ok');
+}
+```
+
+`verifyWebhook()` rejects missing signatures, invalid signatures, malformed signature headers, and timestamps outside the tolerance window. The default tolerance is `300` seconds.
+
+## Generation payload
+
+Generation lifecycle events share this shape:
+
+```json JSON
+{
+  "webhook_event": "generation.completed",
+  "webhook_timestamp": "2026-04-28T12:00:00.000Z",
+  "webhook_delivery_id": "0f0f6cc8-8e33-4f53-90f8-c59362a5b1bd",
+  "webhook_data": {
+    "account_id": "0f0f6cc8-8e33-4f53-90f8-c59362a5b1bd",
+    "model_identifier": "bfl/flux-schnell",
+    "generation_provider_used": "bfl",
+    "generation_status": "succeeded",
+    "generation_prediction_id": "pred_...",
+    "generation_id": "550e8400-e29b-41d4-a716-446655440000",
+    "generation_output_file": ["https://example.com/babysea/output.png"]
+  }
+}
+```
+
+`generation.failed` can include `generation_error` and `generation_error_code`. `generation.canceled` can include `credits_refunded`.
+
+## Credit alert payload
+
+`credits.low_balance` uses a billing payload instead of generation fields.
+
+```json JSON
+{
+  "webhook_event": "credits.low_balance",
+  "webhook_timestamp": "2026-04-28T12:00:00.000Z",
+  "webhook_delivery_id": "0f0f6cc8-8e33-4f53-90f8-c59362a5b1bd",
+  "webhook_data": {
+    "account_id": "0f0f6cc8-8e33-4f53-90f8-c59362a5b1bd",
+    "current_balance": 0.42,
+    "thresholds_crossed": [
+      {
+        "threshold": 0.5,
+        "balance_at": 0.42
+      }
+    ]
+  }
+}
+```
+
+Configure thresholds and delivery channels from [credits, low-balance alerts](/dashboard/credits#low-balance-alerts).
+
+## Delivery behavior
+
+Generation lifecycle deliveries use retries. Credit alert, test, and replay deliveries are one-shot deliveries.
+
+| Event category        | Timeout               | Attempts | Retry behavior                                            |
+| --------------------- | --------------------- | -------- | --------------------------------------------------------- |
+| `generation.*`        | 5 seconds per attempt | 5 total  | Immediate, then after `0.5`, `1.5`, `3`, and `5` seconds. |
+| `credits.low_balance` | 5 seconds             | 1 total  | No automatic retry.                                       |
+| `webhook.test`        | 10 seconds            | 1 total  | No automatic retry.                                       |
+| Replayed delivery     | 10 seconds            | 1 total  | No automatic retry.                                       |
+
+Any `2xx` response marks the delivery successful. Generation endpoints are automatically disabled after `15` consecutive failed generation deliveries. When matching generation events arrive while an endpoint is disabled, BabySea queues them for later delivery.
+
+| Queue behavior           | Value                                                                    |
+| ------------------------ | ------------------------------------------------------------------------ |
+| Queue retention          | 72 hours                                                                 |
+| Deliver queued events    | Sends pending items after you re-enable the endpoint.                    |
+| Queued delivery attempts | One attempt per item with pacing and early stop after repeated failures. |
+| Test events              | Not queued.                                                              |
+
+## Idempotency in your handler
+
+Webhook delivery is at-least-once for generation lifecycle events. Store `webhook_delivery_id` before applying side effects so retries and replays do not duplicate work.
+
+Recommended handler behavior:
+
+- Verify `X-BabySea-Signature` against the raw body.
+- Reject events with stale timestamps.
+- Store `webhook_delivery_id` with a unique constraint.
+- Return `2xx` only after durable side effects complete.
+- Return `4xx` for permanently invalid requests and `5xx` for temporary failures.
+
+## Dashboard management
+
+Use [webhook](/dashboard/webhook) to create endpoints, rotate secrets, send test events, inspect deliveries, replay deliveries, deliver queued events, and delete endpoints.

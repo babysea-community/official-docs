@@ -1,0 +1,54 @@
+---
+title: 'My profile'
+description: 'Manage personal identity, authentication methods, MFA, linked identities, and account deletion.'
+---
+
+My profile controls your personal account settings. These settings follow your user, not a specific team account.
+
+## Open profile settings
+
+Use **My profile** from the dashboard account menu, or open the personal settings route:
+
+```text
+/home/settings
+```
+
+Team-scoped user settings can also be reached from a team context at:
+
+```text
+/home/{account}/user-settings
+```
+
+## What you can manage
+
+| Area               | Description                                                 |
+| ------------------ | ----------------------------------------------------------- |
+| Display name       | Name shown in the dashboard and account UI.                 |
+| Avatar             | Personal profile image.                                     |
+| Email and password | Available when password authentication is enabled.          |
+| Magic link or OTP  | Available when those auth providers are enabled.            |
+| OAuth identities   | Link or manage identities when identity linking is enabled. |
+| MFA                | Configure multi-factor authentication when enabled.         |
+| Account deletion   | Available only when account deletion is enabled.            |
+
+## Personal vs team settings
+
+| Page          | Scope         | Use it for                                                            |
+| ------------- | ------------- | --------------------------------------------------------------------- |
+| My profile    | Your user     | Name, avatar, auth methods, MFA, linked identities, account deletion. |
+| Team settings | Selected team | Team name, team avatar, team slug, team deletion.                     |
+| Members       | Selected team | Invites, roles, and ownership transfer.                               |
+
+## Authentication changes
+
+When you update authentication settings, BabySea may redirect through the configured auth callback path and return you to settings after completion.
+
+## Account deletion
+
+Personal account deletion appears only when it is enabled. When available, review your teams, API keys, billing, credits, and active webhooks before deleting your account.
+
+<Warning>
+  Deleting a personal account can remove or affect resources associated with
+  accounts you own. Transfer ownership before deleting if teammates still need
+  access.
+</Warning>
