@@ -12,31 +12,13 @@
     "global": {
       "anchors": [
         {
-          "anchor": "FAQ",
-          "icon": "comment-question",
+          "anchor": "Templates",
+          "icon": "cube",
           "color": {
             "light": "#0c9b97",
             "dark": "#0c9b97"
           },
-          "href": "https://babysea.ai/faq"
-        },
-        {
-          "anchor": "Pricing plan",
-          "icon": "credit-card",
-          "color": {
-            "light": "#0c9b97",
-            "dark": "#0c9b97"
-          },
-          "href": "https://babysea.ai/pricing-plan"
-        },
-        {
-          "anchor": "Model pricing",
-          "icon": "dollar-sign",
-          "color": {
-            "light": "#0c9b97",
-            "dark": "#0c9b97"
-          },
-          "href": "https://babysea.ai/model-pricing"
+          "href": "https://babysea.ai/templates"
         },
         {
           "anchor": "Model schema",
@@ -46,6 +28,15 @@
             "dark": "#0c9b97"
           },
           "href": "https://babysea.ai/model-schema"
+        },
+        {
+          "anchor": "Playground",
+          "icon": "play",
+          "color": {
+            "light": "#0c9b97",
+            "dark": "#0c9b97"
+          },
+          "href": "https://us.babysea.ai/playground"
         }
       ]
     },
@@ -74,7 +65,7 @@
           },
           {
             "group": "Dashboard",
-            "icon": "gauge",
+            "icon": "chart-column",
             "pages": [
               "dashboard/metrics",
               "dashboard/api-keys",
@@ -100,17 +91,9 @@
       }
     ]
   },
-  "logo": "/static/logo.svg",
+  "logo": "/static/logo.png",
   "navbar": {
     "links": [
-      {
-        "label": "Playground",
-        "href": "https://us.babysea.ai/playground"
-      },
-      {
-        "label": "Status",
-        "href": "https://status.babysea.ai"
-      },
       {
         "label": "Support",
         "href": "https://babysea.ai/support"
@@ -137,11 +120,29 @@
   "footer": {
     "socials": {
       "linkedin": "https://www.linkedin.com/company/babysea-ai",
-      "github": "https://github.com/babysea-community"
+      "github": "https://github.com/babysea-community",
+      "gitlab": "https://gitlab.com/babysea"
     },
     "links": [
       {
-        "header": "Product",
+        "header": "GET STARTED",
+        "items": [
+          {
+            "label": "Templates",
+            "href": "https://babysea.ai/templates"
+          },
+          {
+            "label": "Model schema",
+            "href": "https://babysea.ai/model-schema"
+          },
+          {
+            "label": "Playground",
+            "href": "https://us.babysea.ai/playground"
+          }
+        ]
+      },
+      {
+        "header": "RESOURCES",
         "items": [
           {
             "label": "FAQ",
@@ -156,46 +157,34 @@
             "href": "https://babysea.ai/model-pricing"
           },
           {
-            "label": "Model schema",
-            "href": "https://babysea.ai/model-schema"
-          },
-          {
             "label": "Demo",
             "href": "https://babysea.ai/demo"
           }
         ]
       },
       {
-        "header": "Infrastructure",
+        "header": "LEARN",
         "items": [
           {
-            "label": "Runtime control",
-            "href": "https://babysea.ai/#runtime-control"
+            "label": "Docs",
+            "href": "https://docs.babysea.ai"
           },
           {
-            "label": "API security",
-            "href": "https://babysea.ai/#api-security"
+            "label": "Blog",
+            "href": "https://babysea.ai/blog"
           },
           {
-            "label": "Auto failover",
-            "href": "https://babysea.ai/#auto-failover"
+            "label": "Changelog",
+            "href": "https://docs.babysea.ai/changelog"
           },
           {
-            "label": "Signed webhooks",
-            "href": "https://babysea.ai/#signed-webhooks"
-          },
-          {
-            "label": "Multi-region",
-            "href": "https://babysea.ai/#multi-region"
-          },
-          {
-            "label": "Enterprise",
-            "href": "https://babysea.ai/#enterprise"
+            "label": "Trust center",
+            "href": "https://trust.babysea.ai"
           }
         ]
       },
       {
-        "header": "Company",
+        "header": "COMPANY",
         "items": [
           {
             "label": "About us",
@@ -206,10 +195,6 @@
             "href": "https://babysea.ai/team"
           },
           {
-            "label": "Blog",
-            "href": "https://babysea.ai/blog"
-          },
-          {
             "label": "Terms of use",
             "href": "https://babysea.ai/terms-of-use"
           },
@@ -218,37 +203,8 @@
             "href": "https://babysea.ai/privacy-policy"
           },
           {
-            "label": "Trust center",
-            "href": "https://trust.babysea.ai"
-          },
-          {
             "label": "Support",
             "href": "https://babysea.ai/support"
-          }
-        ]
-      },
-      {
-        "header": "Developers",
-        "items": [
-          {
-            "label": "Docs",
-            "href": "https://docs.babysea.ai"
-          },
-          {
-            "label": "Playground",
-            "href": "https://us.babysea.ai/playground"
-          },
-          {
-            "label": "Changelog",
-            "href": "https://docs.babysea.ai/changelog"
-          },
-          {
-            "label": "Status",
-            "href": "https://status.babysea.ai"
-          },
-          {
-            "label": "Open source",
-            "href": "https://github.com/babysea-community"
           }
         ]
       }
